@@ -30,9 +30,9 @@ import java.util.Date;
 import java.util.UUID;
 
 
-
 class ActiveBluetoothDevice {
     private final static String TAG = DexCollectionService.class.getSimpleName();
+    public String address;
 
     ActiveBluetoothDevice(Context context) {
         //SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
@@ -50,23 +50,25 @@ class ActiveBluetoothDevice {
         context.sendBroadcast(new Intent("BT_CONNECT"));
 
     }
+
     static void disconnected(Context context) {
         Log.e(TAG, "BT device DisConnected");
         context.sendBroadcast(new Intent("BT_DISCONNECT"));
 
     }
+
     boolean IsConfigured() {
         return (!address.equals("none"));
     }
-    public String address;
 }
 
 
 class CollectionServiceStarter {
-    static boolean  isBTWixel(Context context) {
+    static boolean isBTWixel(Context context) {
         return true;
     }
-    static boolean  isDexbridgeWixel(Context context) {
+
+    static boolean isDexbridgeWixel(Context context) {
         return false;
     }
 
@@ -96,97 +98,21 @@ public class DexCollectionService extends Service {
     public static String CLIENT_CHARACTERISTIC_CONFIG = "00002902-0000-1000-8000-00805f9b34fb";
     public static String HM_10_SERVICE = "0000ffe0-0000-1000-8000-00805f9b34fb";
     public static String HM_RX_TX = "0000ffe1-0000-1000-8000-00805f9b34fb";
-
-    private String mDeviceAddress;
-    SharedPreferences prefs;
-
-    public DexCollectionService dexCollectionService;
-
-    private BluetoothManager mBluetoothManager;
-    private BluetoothAdapter mBluetoothAdapter;
-    private BluetoothGatt mBluetoothGatt;
-    private ForegroundServiceStarter foregroundServiceStarter;
-    private int mConnectionState = BluetoothProfile.STATE_DISCONNECTING;
-    private BluetoothDevice device;
-    private BluetoothGattCharacteristic mCharacteristic;
-    long lastPacketTime;
-    private byte[] lastdata = null;
-    private Context mContext;
+    public final UUID xDripDataService = UUID.fromString(HM_10_SERVICE);
+    public final UUID xDripDataCharacteristic = UUID.fromString(HM_RX_TX);
     private final int STATE_DISCONNECTED = BluetoothProfile.STATE_DISCONNECTED;
     private final int STATE_DISCONNECTING = BluetoothProfile.STATE_DISCONNECTING;
     private final int STATE_CONNECTING = BluetoothProfile.STATE_CONNECTING;
     private final int STATE_CONNECTED = BluetoothProfile.STATE_CONNECTED;
-
-    public final UUID xDripDataService = UUID.fromString(HM_10_SERVICE);
-    public final UUID xDripDataCharacteristic = UUID.fromString(HM_RX_TX);
-
-
-    static public String getConnectionStatus(Context context) {
-        ActiveBluetoothDevice activeBluetoothDevice = ActiveBluetoothDevice.first(context);
-        BluetoothManager BluetoothManager = (BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
-        boolean connected = false;
-        if (BluetoothManager != null && activeBluetoothDevice != null) {
-            for (BluetoothDevice bluetoothDevice : BluetoothManager.getConnectedDevices(BluetoothProfile.GATT)) {
-                if (bluetoothDevice.getAddress().compareTo(activeBluetoothDevice.address) == 0) {
-                    connected = true;
-                }
-            }
-        }
-        if (connected) {
-            return "BLuetooth Connected";
-        } else {
-            return "BLuetooth Disconnected";
-        }
-    }
-
-    @Override
-    public IBinder onBind(Intent intent) {
-        throw new UnsupportedOperationException("Not yet implemented");
-    }
-
-    @Override
-    public void onCreate() {
-        foregroundServiceStarter = new ForegroundServiceStarter(getApplicationContext(), this);
-        foregroundServiceStarter.start();
-        mContext = getApplicationContext();
-        dexCollectionService = this;
-        prefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
-        listenForChangeInSettings();
-        Log.w(TAG, "onCreate: STARTING SERVICE");
-    }
-
-    @Override
-    public int onStartCommand(Intent intent, int flags, int startId) {
-        Log.d(TAG, "onStartCommand: entering Connection state: " + mConnectionState);
-        if (android.os.Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN_MR2) {
-            stopSelf();
-            return START_NOT_STICKY;
-        }
-        if (CollectionServiceStarter.isBTWixel(getApplicationContext()) || CollectionServiceStarter.isDexbridgeWixel(getApplicationContext())) {
-            setFailoverTimer();
-        } else {
-            stopSelf();
-            return START_NOT_STICKY;
-        }
-        ActiveBluetoothDevice btDevice = ActiveBluetoothDevice.first(getApplicationContext());
-        if (btDevice.IsConfigured()) {
-            attemptConnection();
-        } else {
-            close();
-        }
-        return START_STICKY;
-    }
-
-    @Override
-    public void onDestroy() {
-        super.onDestroy();
-        Log.w(TAG, "onDestroy entered");
-        close();
-        foregroundServiceStarter.stop();
-        setRetryTimer();
-        Log.w(TAG, "SERVICE STOPPED");
-    }
-
+    public DexCollectionService dexCollectionService;
+    SharedPreferences prefs;
+    long lastPacketTime;
+    long timestamp = new Date().getTime();
+    private String mDeviceAddress;
+    private BluetoothManager mBluetoothManager;
+    private BluetoothAdapter mBluetoothAdapter;
+    private BluetoothGatt mBluetoothGatt;
+    private ForegroundServiceStarter foregroundServiceStarter;
     public SharedPreferences.OnSharedPreferenceChangeListener prefListener = new SharedPreferences.OnSharedPreferenceChangeListener() {
         public void onSharedPreferenceChanged(SharedPreferences prefs, String key) {
             Log.e(TAG, "Settings have changed");
@@ -205,79 +131,11 @@ public class DexCollectionService extends Service {
         }
 
     };
-
-    public void listenForChangeInSettings() {
-        prefs.registerOnSharedPreferenceChangeListener(prefListener);
-    }
-
-    public void setRetryTimer() {
-        setRetryTimer(1000 * 65);
-    }
-
-    public void setRetryTimer(long retry_in) {
-        if (CollectionServiceStarter.isBTWixel(getApplicationContext()) || CollectionServiceStarter.isDexbridgeWixel(getApplicationContext())) {
-            Log.d(TAG, "setRetryTimer: Restarting in: " + (retry_in / 1000) + " seconds");
-            Calendar calendar = Calendar.getInstance();
-            AlarmManager alarm = (AlarmManager) getSystemService(ALARM_SERVICE);
-            if (Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.KITKAT) {
-                alarm.setExact(alarm.RTC_WAKEUP, calendar.getTimeInMillis() + retry_in, PendingIntent.getService(this, 0, new Intent(this, DexCollectionService.class), 0));
-            } else {
-                alarm.set(alarm.RTC_WAKEUP, calendar.getTimeInMillis() + retry_in, PendingIntent.getService(this, 0, new Intent(this, DexCollectionService.class), 0));
-            }
-        }
-    }
-
-    public void setFailoverTimer() {
-        if (CollectionServiceStarter.isBTWixel(getApplicationContext()) || CollectionServiceStarter.isDexbridgeWixel(getApplicationContext())) {
-            long retry_in = (1000 * 60 * 6);
-            Log.d(TAG, "setFailoverTimer: Fallover Restarting in: " + (retry_in / (60 * 1000)) + " minutes");
-            Calendar calendar = Calendar.getInstance();
-            AlarmManager alarm = (AlarmManager) getSystemService(ALARM_SERVICE);
-            if (Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.KITKAT) {
-                alarm.setExact(alarm.RTC_WAKEUP, calendar.getTimeInMillis() + retry_in, PendingIntent.getService(this, 0, new Intent(this, DexCollectionService.class), 0));
-            } else {
-                alarm.set(alarm.RTC_WAKEUP, calendar.getTimeInMillis() + retry_in, PendingIntent.getService(this, 0, new Intent(this, DexCollectionService.class), 0));
-            }
-        } else {
-            stopSelf();
-        }
-    }
-
-    public void attemptConnection() {
-        mBluetoothManager = (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
-        if (mBluetoothManager != null) {
-            mBluetoothAdapter = mBluetoothManager.getAdapter();
-            if (mBluetoothAdapter != null) {
-                if (device != null) {
-                    mConnectionState = STATE_DISCONNECTED;
-                    for (BluetoothDevice bluetoothDevice : mBluetoothManager.getConnectedDevices(BluetoothProfile.GATT)) {
-                        if (bluetoothDevice.getAddress().compareTo(device.getAddress()) == 0) {
-                            mConnectionState = STATE_CONNECTED;
-                        }
-                    }
-                }
-
-                Log.w(TAG, "attemptConnection: Connection state: " + mConnectionState);
-                if (mConnectionState == STATE_DISCONNECTED || mConnectionState == STATE_DISCONNECTING) {
-                    Log.w(TAG, "inside if .........." + STATE_DISCONNECTED + " " + STATE_DISCONNECTING);
-                    ActiveBluetoothDevice btDevice = ActiveBluetoothDevice.first(getApplicationContext());
-                    if (btDevice != null) {
-                        mDeviceAddress = btDevice.address;
-                        Log.w(TAG, "Device Addresses is " + mDeviceAddress);
-                        if (mBluetoothAdapter.isEnabled() && mBluetoothAdapter.getRemoteDevice(mDeviceAddress) != null) {
-                            connect(mDeviceAddress);
-                            return;
-                        }
-                    }
-                } else if (mConnectionState == STATE_CONNECTED) { //WOOO, we are good to go, nothing to do here!
-                    Log.w(TAG, "attemptConnection: Looks like we are already connected, going to read!");
-                    return;
-                }
-            }
-        }
-        setRetryTimer();
-    }
-
+    private int mConnectionState = BluetoothProfile.STATE_DISCONNECTING;
+    private BluetoothDevice device;
+    private BluetoothGattCharacteristic mCharacteristic;
+    private byte[] lastdata = null;
+    private Context mContext;
     private final BluetoothGattCallback mGattCallback = new BluetoothGattCallback() {
         @Override
         public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
@@ -356,6 +214,144 @@ public class DexCollectionService extends Service {
         }
     };
 
+    static public String getConnectionStatus(Context context) {
+        ActiveBluetoothDevice activeBluetoothDevice = ActiveBluetoothDevice.first(context);
+        BluetoothManager BluetoothManager = (BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
+        boolean connected = false;
+        if (BluetoothManager != null && activeBluetoothDevice != null) {
+            for (BluetoothDevice bluetoothDevice : BluetoothManager.getConnectedDevices(BluetoothProfile.GATT)) {
+                if (bluetoothDevice.getAddress().compareTo(activeBluetoothDevice.address) == 0) {
+                    connected = true;
+                }
+            }
+        }
+        if (connected) {
+            return "BLuetooth Connected";
+        } else {
+            return "BLuetooth Disconnected";
+        }
+    }
+
+    @Override
+    public IBinder onBind(Intent intent) {
+        throw new UnsupportedOperationException("Not yet implemented");
+    }
+
+    @Override
+    public void onCreate() {
+        foregroundServiceStarter = new ForegroundServiceStarter(getApplicationContext(), this);
+        foregroundServiceStarter.start();
+        mContext = getApplicationContext();
+        dexCollectionService = this;
+        prefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+        listenForChangeInSettings();
+        Log.w(TAG, "onCreate: STARTING SERVICE");
+    }
+
+    @Override
+    public int onStartCommand(Intent intent, int flags, int startId) {
+        Log.d(TAG, "onStartCommand: entering Connection state: " + mConnectionState);
+        if (android.os.Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN_MR2) {
+            stopSelf();
+            return START_NOT_STICKY;
+        }
+        if (CollectionServiceStarter.isBTWixel(getApplicationContext()) || CollectionServiceStarter.isDexbridgeWixel(getApplicationContext())) {
+            setFailoverTimer();
+        } else {
+            stopSelf();
+            return START_NOT_STICKY;
+        }
+        ActiveBluetoothDevice btDevice = ActiveBluetoothDevice.first(getApplicationContext());
+        if (btDevice.IsConfigured()) {
+            attemptConnection();
+        } else {
+            close();
+        }
+        return START_STICKY;
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        Log.w(TAG, "onDestroy entered");
+        close();
+        foregroundServiceStarter.stop();
+        setRetryTimer();
+        Log.w(TAG, "SERVICE STOPPED");
+    }
+
+    public void listenForChangeInSettings() {
+        prefs.registerOnSharedPreferenceChangeListener(prefListener);
+    }
+
+    public void setRetryTimer() {
+        setRetryTimer(1000 * 65);
+    }
+
+    public void setRetryTimer(long retry_in) {
+        if (CollectionServiceStarter.isBTWixel(getApplicationContext()) || CollectionServiceStarter.isDexbridgeWixel(getApplicationContext())) {
+            Log.d(TAG, "setRetryTimer: Restarting in: " + (retry_in / 1000) + " seconds");
+            Calendar calendar = Calendar.getInstance();
+            AlarmManager alarm = (AlarmManager) getSystemService(ALARM_SERVICE);
+            if (Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.KITKAT) {
+                alarm.setExact(alarm.RTC_WAKEUP, calendar.getTimeInMillis() + retry_in, PendingIntent.getService(this, 0, new Intent(this, DexCollectionService.class), 0));
+            } else {
+                alarm.set(alarm.RTC_WAKEUP, calendar.getTimeInMillis() + retry_in, PendingIntent.getService(this, 0, new Intent(this, DexCollectionService.class), 0));
+            }
+        }
+    }
+
+    public void setFailoverTimer() {
+        if (CollectionServiceStarter.isBTWixel(getApplicationContext()) || CollectionServiceStarter.isDexbridgeWixel(getApplicationContext())) {
+            long retry_in = (1000 * 60 * 6);
+            Log.d(TAG, "setFailoverTimer: Fallover Restarting in: " + (retry_in / (60 * 1000)) + " minutes");
+            Calendar calendar = Calendar.getInstance();
+            AlarmManager alarm = (AlarmManager) getSystemService(ALARM_SERVICE);
+            if (Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.KITKAT) {
+                alarm.setExact(alarm.RTC_WAKEUP, calendar.getTimeInMillis() + retry_in, PendingIntent.getService(this, 0, new Intent(this, DexCollectionService.class), 0));
+            } else {
+                alarm.set(alarm.RTC_WAKEUP, calendar.getTimeInMillis() + retry_in, PendingIntent.getService(this, 0, new Intent(this, DexCollectionService.class), 0));
+            }
+        } else {
+            stopSelf();
+        }
+    }
+
+    public void attemptConnection() {
+        mBluetoothManager = (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
+        if (mBluetoothManager != null) {
+            mBluetoothAdapter = mBluetoothManager.getAdapter();
+            if (mBluetoothAdapter != null) {
+                if (device != null) {
+                    mConnectionState = STATE_DISCONNECTED;
+                    for (BluetoothDevice bluetoothDevice : mBluetoothManager.getConnectedDevices(BluetoothProfile.GATT)) {
+                        if (bluetoothDevice.getAddress().compareTo(device.getAddress()) == 0) {
+                            mConnectionState = STATE_CONNECTED;
+                        }
+                    }
+                }
+
+                Log.w(TAG, "attemptConnection: Connection state: " + mConnectionState);
+                if (mConnectionState == STATE_DISCONNECTED || mConnectionState == STATE_DISCONNECTING) {
+                    Log.w(TAG, "inside if .........." + STATE_DISCONNECTED + " " + STATE_DISCONNECTING);
+                    ActiveBluetoothDevice btDevice = ActiveBluetoothDevice.first(getApplicationContext());
+                    if (btDevice != null) {
+                        mDeviceAddress = btDevice.address;
+                        Log.w(TAG, "Device Addresses is " + mDeviceAddress);
+                        if (mBluetoothAdapter.isEnabled() && mBluetoothAdapter.getRemoteDevice(mDeviceAddress) != null) {
+                            connect(mDeviceAddress);
+                            return;
+                        }
+                    }
+                } else if (mConnectionState == STATE_CONNECTED) { //WOOO, we are good to go, nothing to do here!
+                    Log.w(TAG, "attemptConnection: Looks like we are already connected, going to read!");
+                    return;
+                }
+            }
+        }
+        setRetryTimer();
+    }
+
     private boolean sendBtMessage(final ByteBuffer message) {
         //check mBluetoothGatt is available
         Log.w(TAG, "sendBtMessage: entered");
@@ -425,67 +421,106 @@ public class DexCollectionService extends Service {
         mCharacteristic = null;
         mConnectionState = STATE_DISCONNECTED;
     }
-
-    long timestamp = new Date().getTime();
-
     public void setSerialDataToTransmitterRawData(byte[] buffer, int len) {
-        Log.w(TAG, "Just recieved buffer packet !!! size " + len + " " + buffer);
-        int DexSrc;
-        int TransmitterID;
-        SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(mContext);
-        String transmitter_id = preferences.getString("transmitter_id", "6BBKU");
-        String TxId;
-        Calendar c = Calendar.getInstance();
-        long secondsNow = c.getTimeInMillis();
-        ByteBuffer tmpBuffer = ByteBuffer.allocate(len);
-        tmpBuffer.order(ByteOrder.LITTLE_ENDIAN);
+        long timestamp = new Date().getTime();
+            Log.i(TAG, "setSerialDataToTransmitterRawData: Dealing with Dexbridge packet!");
+        for (byte b : buffer) {Log.i("Transmitter Byte array", String.format("0x%20x", b));}
+            int DexSrc;
+            int TransmitterID;
+            String TxId;
+            Calendar c = Calendar.getInstance();
+            long secondsNow = c.getTimeInMillis();
+            ByteBuffer tmpBuffer = ByteBuffer.allocate(len);
+            tmpBuffer.order(ByteOrder.LITTLE_ENDIAN);
         tmpBuffer.put(buffer, 0, len);
-        ByteBuffer txidMessage = ByteBuffer.allocate(6);
-        txidMessage.order(ByteOrder.LITTLE_ENDIAN);
-        Log.w(TAG, "Just recieved buffer packet !!! size " + len + " " + buffer);
-        if (buffer[0] == 0x11 && buffer[1] == 0x00) {
-            //we have a data packet.  Check to see if the TXID is what we are expecting.
-            Log.i(TAG, "setSerialDataToTransmitterRawData: Received Data packet");
-            if (len >= 0x11) {
-                //DexSrc starts at Byte 12 of a data packet.
-                DexSrc = tmpBuffer.getInt(12);
-                TxId = PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).getString("transmitter_id", "00000");
+            ByteBuffer txidMessage = ByteBuffer.allocate(6);
+            txidMessage.order(ByteOrder.LITTLE_ENDIAN);
+            if (buffer[0] == 0x07 && buffer[1] == -15) {
+                //We have a Beacon packet.  Get the TXID value and compare with dex_txid
+                Log.i(TAG, "setSerialDataToTransmitterRawData: Received Beacon packet.");
+                for (byte b : buffer) {Log.i("Beacon packet array", String.format("0x%20x", b));}
+                //DexSrc starts at Byte 2 of a Beacon packet.
+                DexSrc = tmpBuffer.getInt(2);
+                //TxId = PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).getString("dex_txid", "00000");
+                TxId="6BBKU";
                 TransmitterID = convertSrc(TxId);
-                if (Integer.compare(DexSrc, TransmitterID) != 0) {
-                    Log.w(TAG, "TXID wrong.  Expected " + TransmitterID + " but got " + DexSrc);
+                if (TxId.compareTo("00000") != 0 && Integer.compare(DexSrc, TransmitterID) != 0) {
+                    Log.w(TAG, "setSerialDataToTransmitterRawData: TXID wrong.  Expected " + TransmitterID + " but got " + DexSrc);
                     txidMessage.put(0, (byte) 0x06);
                     txidMessage.put(1, (byte) 0x01);
                     txidMessage.putInt(2, TransmitterID);
                     sendBtMessage(txidMessage);
                 }
-                PreferenceManager.getDefaultSharedPreferences(mContext).edit().putInt("bridge_battery", ByteBuffer.wrap(buffer).get(11)).apply();
-                //All is OK, so process it.
-                //first, tell the wixel it is OK to sleep.
-                Log.d(TAG, "setSerialDataToTransmitterRawData: Sending Data packet Ack, to put wixel to sleep");
-                ByteBuffer ackMessage = ByteBuffer.allocate(2);
-                ackMessage.put(0, (byte) 0x02);
-                ackMessage.put(1, (byte) 0xF0);
-                sendBtMessage(ackMessage);
-                //make sure we are not processing a packet we already have
-                if (secondsNow - lastPacketTime < 60000) {
-                    Log.v(TAG, "setSerialDataToTransmitterRawData: Received Duplicate Packet.  Exiting.");
-                    return;
-                } else {
-                    lastPacketTime = secondsNow;
-                }
-                Log.v(TAG, "setSerialDataToTransmitterRawData: Creating TransmitterData at " + timestamp + "buffer" +buffer + "length" + len);
-                for (byte b: buffer){
-                    Log.i("Transmitter Byte array", String.format("0x%20x", b));
-                }
-
-                // processNewTransmitterData(TransmitterData.create(buffer, len, timestamp), timestamp);
-
-                // Log.w(TAG, "Creating a packet: "+ transmitter_id +" " + id + " " +  raw_data+ " " +  filtered+ " " +  sensor_battery_level+ " " +  bridgeBattery);
-                //TransmitterRawData trd = new TransmitterRawData(getApplicationContext(), transmitter_id, id, raw_data, filtered, sensor_battery_level, bridgeBattery);
-
+                return;
             }
-        }
-    }
+            if (buffer[0] == 0x11 && buffer[1] == 0x00) {
+                //we have a data packet.  Check to see if the TXID is what we are expecting.
+                Log.i(TAG, "setSerialDataToTransmitterRawData: Received Data packet");
+                for (byte b : buffer) {Log.i("Data packet array", String.format("0x%20x", b));}
+                if (len >= 0x11) {
+                    //DexSrc starts at Byte 12 of a data packet.
+                    DexSrc = tmpBuffer.getInt(12);
+                    //TxId = PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).getString("dex_txid", "00000");
+                    TxId="6BBKU";
+                    TransmitterID = convertSrc(TxId);
+                    if (Integer.compare(DexSrc, TransmitterID) != 0) {
+                        Log.w(TAG, "TXID wrong.  Expected " + TransmitterID + " but got " + DexSrc);
+                        txidMessage.put(0, (byte) 0x06);
+                        txidMessage.put(1, (byte) 0x01);
+                        txidMessage.putInt(2, TransmitterID);
+                        sendBtMessage(txidMessage);
+                    }
+                    PreferenceManager.getDefaultSharedPreferences(mContext).edit().putInt("bridge_battery", ByteBuffer.wrap(buffer).get(11)).apply();
+                    //All is OK, so process it.
+                    //first, tell the wixel it is OK to sleep.
+                    Log.d(TAG, "setSerialDataToTransmitterRawData: Sending Data packet Ack, to put wixel to sleep");
+                    ByteBuffer ackMessage = ByteBuffer.allocate(2);
+                    ackMessage.put(0, (byte) 0x02);
+                    ackMessage.put(1, (byte) 0xF0);
+                    sendBtMessage(ackMessage);
+                    //make sure we are not processing a packet we already have
+                    if (secondsNow - lastPacketTime < 60000) {
+                        Log.v(TAG, "setSerialDataToTransmitterRawData: Received Duplicate Packet.  Exiting.");
+                        return;
+                    } else {
+                        lastPacketTime = secondsNow;
+                    }
+                    for (byte b : buffer) {Log.i("Transmitter Data array", String.format("0x%20x", b));}
+                    Log.v(TAG, "setSerialDataToTransmitterRawData: Creating TransmitterData at " + timestamp);
+                    //processNewTransmitterData(TransmitterData.create(buffer, len, timestamp), timestamp);
+                    int raw_data, filtered_data, sensor_battery_level;
+
+                    if (buffer[0] == 0x11 && buffer[1] == 0x00) {
+                        //this is a dexbridge packet.  Process accordingly.
+                        Log.i(TAG, "create Processing a Dexbridge packet");
+                        ByteBuffer txData = ByteBuffer.allocate(len);
+                        txData.order(ByteOrder.LITTLE_ENDIAN);
+                        txData.put(buffer, 0, len);
+                        raw_data = txData.getInt(2);
+                        filtered_data = txData.getInt(6);
+                        //  bitwise and with 0xff (1111....1) to avoid that the byte is treated as signed.
+                        sensor_battery_level = txData.get(10) & 0xff;
+                        Log.i(TAG, "Created transmitterData record with Raw value of " + raw_data + " and Filtered value of " + filtered_data + " at " + timestamp);
+                    } else { //this is NOT a dexbridge packet.  Process accordingly.
+                        Log.i(TAG, "create Processing a BTWixel or IPWixel packet");
+                        StringBuilder data_string = new StringBuilder();
+                        for (int i = 0; i < len; ++i) { data_string.append((char) buffer[i]); }
+                        String[] data = data_string.toString().split("\\s+");
+
+                        if (data.length > 1) {
+                            sensor_battery_level = Integer.parseInt(data[1]);
+                        }
+                        raw_data = Integer.parseInt(data[0]);
+                        filtered_data = Integer.parseInt(data[0]);
+                    }
+
+                }
+            }
+
+
+
+
+}
 
 
 

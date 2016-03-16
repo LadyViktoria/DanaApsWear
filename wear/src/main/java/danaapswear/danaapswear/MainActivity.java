@@ -16,7 +16,7 @@ public class MainActivity extends WearableActivity {
 
     private static final SimpleDateFormat AMBIENT_DATE_FORMAT =
             new SimpleDateFormat("HH:mm", Locale.US);
-
+    private static Context mContext;
     private BoxInsetLayout mContainerView;
     private TextView mTextView;
     private TextView mClockView;
@@ -24,8 +24,6 @@ public class MainActivity extends WearableActivity {
     public static Context getContext() {
         return mContext;
     }
-    private static Context mContext;
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
