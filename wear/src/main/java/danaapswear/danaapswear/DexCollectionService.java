@@ -29,6 +29,8 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.UUID;
 
+
+
 class ActiveBluetoothDevice {
     private final static String TAG = DexCollectionService.class.getSimpleName();
 

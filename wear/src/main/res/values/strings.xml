@@ -1,4 +1,4 @@
 <resources>
     <string name="app_name">DanaApsWear</string>
-    <string name="DanaApsWear">My Digital</string>
+    <string name="hello_world">Hello World!</string>
 </resources>
