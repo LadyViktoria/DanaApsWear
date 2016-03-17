@@ -1,6 +1,6 @@
 package com.eveningoutpost.dexdrip.Services;
 import java.util.Date;
-import com.mongodb.BasicDBObject;
+//import com.mongodb.BasicDBObject;
 /**
  * Created by John Costik on 6/7/14.
  */
@@ -170,7 +170,7 @@ public class TransmitterRawData {
 
         return displayDt + transmitterId + transmissionId + rawVal + filterVal + batteryVal + signalVal + uploadDeviceBatteryVal + uploaded + RelativeTime;
     }
-
+/*
     public BasicDBObject toDbObj(String DebugInfo) {
     	BasicDBObject doc = new BasicDBObject("TransmissionId", TransmissionId).
     			append("TransmitterId", TransmitterId).
@@ -194,6 +194,6 @@ public class TransmitterRawData {
     	CaptureDateTime = src.getLong("CaptureDateTime");
     	UploaderBatteryLife = src.getInt("UploaderBatteryLife");
     }
-
+*/
 
 }

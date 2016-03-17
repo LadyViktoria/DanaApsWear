@@ -1,22 +1,19 @@
 package com.eveningoutpost.dexdrip.UtilityModels;
 
-import android.app.AlarmManager;
-import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Environment;
 import android.preference.PreferenceManager;
+import android.util.Log;
 
-import com.eveningoutpost.dexdrip.Models.UserError.Log;
-import com.eveningoutpost.dexdrip.Services.DailyIntentService;
 import com.eveningoutpost.dexdrip.Services.DexCollectionService;
-import com.eveningoutpost.dexdrip.Services.DexShareCollectionService;
-import com.eveningoutpost.dexdrip.Services.SyncService;
-import com.eveningoutpost.dexdrip.Services.WifiCollectionService;
 
 import java.io.IOException;
-import java.util.Calendar;
+
+//import com.eveningoutpost.dexdrip.Models.UserError.Log;
+//import com.eveningoutpost.dexdrip.Services.DailyIntentService;
+//import com.eveningoutpost.dexdrip.Services.SyncService;
 
 /**
  * Created by stephenblack on 12/22/14.
@@ -27,11 +24,6 @@ public class CollectionServiceStarter {
     private final static String TAG = CollectionServiceStarter.class.getSimpleName();
 
 
-    public static boolean isWifiandBTWixel(Context context) {
-        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
-        String collection_method = prefs.getString("dex_collection_method", "BluetoothWixel");
-        return collection_method.compareTo("WifiBlueToothWixel") == 0;
-    }
 
     public static boolean isBTWixel(Context context) {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
@@ -47,19 +39,7 @@ public class CollectionServiceStarter {
     }
     public static boolean isDexbridgeWixel(String collection_method) { return collection_method.equals("DexbridgeWixel"); }
 
-    public static boolean isBTShare(Context context) {
-        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
-        String collection_method = prefs.getString("dex_collection_method", "BluetoothWixel");
-        return collection_method.compareTo("DexcomShare") == 0;
-    }
-    public static boolean isBTShare(String collection_method) { return collection_method.equals("DexcomShare"); }
 
-    public static boolean isWifiWixel(Context context) {
-        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
-        String collection_method = prefs.getString("dex_collection_method", "BluetoothWixel");
-        return collection_method.compareTo("WifiWixel") == 0;
-    }
-    public static boolean isWifiWixel(String collection_method) { return collection_method.equals("WifiWixel"); }
 
     public static void newStart(Context context) {
         CollectionServiceStarter collectionServiceStarter = new CollectionServiceStarter(context);
@@ -72,36 +52,10 @@ public class CollectionServiceStarter {
 
         if(isBTWixel(collection_method)||isDexbridgeWixel(collection_method)) {
             Log.d("DexDrip", "Starting bt wixel collector");
-            stopWifWixelThread();
-            stopBtShareService();
             startBtWixelService();
-        } else if(isWifiWixel(collection_method)){
-            Log.d("DexDrip", "Starting wifi wixel collector");
-            stopBtWixelService();
-            stopBtShareService();
-            startWifWixelThread();
-        } else if(isBTShare(collection_method)) {
-            Log.d("DexDrip", "Starting bt share collector");
-            stopBtWixelService();
-            stopWifWixelThread();
-            startBtShareService();
-        } else if (isWifiandBTWixel(context)) {
-            Log.d("DexDrip", "Starting wifi and bt wixel collector");
-            stopBtWixelService();
-            stopWifWixelThread();
-            stopBtShareService();
-            // start both
-            Log.d("DexDrip", "Starting wifi wixel collector first");
-            startWifWixelThread();
-            Log.d("DexDrip", "Starting bt wixel collector second");
-            startBtWixelService();
-            Log.d("DexDrip", "Started wifi and bt wixel collector");
         }
-        if(prefs.getBoolean("broadcast_to_pebble", false)){
-            startPebbleSyncService();
-        }
-        startSyncService();
-        startDailyIntentService();
+
+
         Log.d(TAG, collection_method);
 
         // Start logging to logcat
@@ -131,17 +85,13 @@ public class CollectionServiceStarter {
 
     public static void restartCollectionService(Context context) {
         CollectionServiceStarter collectionServiceStarter = new CollectionServiceStarter(context);
-        collectionServiceStarter.stopBtShareService();
         collectionServiceStarter.stopBtWixelService();
-        collectionServiceStarter.stopWifWixelThread();
         collectionServiceStarter.start(context);
     }
 
     public static void restartCollectionService(Context context, String collection_method) {
         CollectionServiceStarter collectionServiceStarter = new CollectionServiceStarter(context);
-        collectionServiceStarter.stopBtShareService();
         collectionServiceStarter.stopBtWixelService();
-        collectionServiceStarter.stopWifWixelThread();
         collectionServiceStarter.start(context, collection_method);
     }
 
@@ -156,20 +106,8 @@ public class CollectionServiceStarter {
         mContext.stopService(new Intent(mContext, DexCollectionService.class));
     }
 
-    private void startBtShareService() {
-        Log.d(TAG, "starting bt share service");
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.JELLY_BEAN_MR2) {
-            mContext.startService(new Intent(mContext, DexShareCollectionService.class));
-        }
-    }
-    private void startPebbleSyncService() {
-        Log.d(TAG, "starting PebbleSync service");
-        mContext.startService(new Intent(mContext, PebbleSync.class));
-    }
-    private void startSyncService() {
-        Log.d(TAG, "starting Sync service");
-        mContext.startService(new Intent(mContext, SyncService.class));
-    }
+
+    /*
     private void startDailyIntentService() {
         Calendar calendar = Calendar.getInstance();
         calendar.set(Calendar.HOUR_OF_DAY, 4);
@@ -180,19 +118,5 @@ public class CollectionServiceStarter {
         AlarmManager am = (AlarmManager) mContext.getSystemService(Context.ALARM_SERVICE);
         am.setRepeating(AlarmManager.RTC_WAKEUP, calendar.getTimeInMillis(), AlarmManager.INTERVAL_DAY, pi);
     }
-    private void stopBtShareService() {
-        Log.d(TAG, "stopping bt share service");
-        mContext.stopService(new Intent(mContext, DexShareCollectionService.class));
-    }
-
-    private void startWifWixelThread() {
-        Log.d(TAG, "starting wifi wixel service");
-        mContext.startService(new Intent(mContext, WifiCollectionService.class));
-    }
-
-    private void stopWifWixelThread() {
-        Log.d(TAG, "stopping wifi wixel service");
-        mContext.stopService(new Intent(mContext, WifiCollectionService.class));
-    }
-
+*/
 }

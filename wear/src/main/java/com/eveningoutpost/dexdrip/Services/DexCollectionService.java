@@ -35,29 +35,30 @@ import android.os.Build;
 import android.os.IBinder;
 import android.os.PowerManager;
 import android.preference.PreferenceManager;
-import com.eveningoutpost.dexdrip.Models.UserError.Log;
+import android.util.Log;
 
 import com.eveningoutpost.dexdrip.Models.ActiveBluetoothDevice;
-import com.eveningoutpost.dexdrip.Models.BgReading;
 import com.eveningoutpost.dexdrip.Models.TransmitterData;
-import com.eveningoutpost.dexdrip.Models.Sensor;
 import com.eveningoutpost.dexdrip.UtilityModels.CollectionServiceStarter;
 import com.eveningoutpost.dexdrip.UtilityModels.ForegroundServiceStarter;
 import com.eveningoutpost.dexdrip.UtilityModels.HM10Attributes;
-import com.eveningoutpost.dexdrip.utils.BgToSpeech;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.UUID;
+
+//import com.eveningoutpost.dexdrip.Models.BgReading;
+//import com.eveningoutpost.dexdrip.Models.Sensor;
+
+//import com.eveningoutpost.dexdrip.utils.BgToSpeech;
 
 @TargetApi(Build.VERSION_CODES.KITKAT)
 public class DexCollectionService extends Service {
     private final static String TAG = DexCollectionService.class.getSimpleName();
     private SharedPreferences prefs;
-    private BgToSpeech bgToSpeech;
+    //private BgToSpeech bgToSpeech;
     public DexCollectionService dexCollectionService;
 
     private BluetoothAdapter mBluetoothAdapter;
@@ -90,7 +91,7 @@ public class DexCollectionService extends Service {
         dexCollectionService = this;
         prefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
         listenForChangeInSettings();
-        bgToSpeech = BgToSpeech.setupTTS(mContext); //keep reference to not being garbage collected
+      //  bgToSpeech = BgToSpeech.setupTTS(mContext); //keep reference to not being garbage collected
         if(CollectionServiceStarter.isDexbridgeWixel(getApplicationContext())){
             Log.i(TAG,"onCreate: resetting bridge_battery preference to 0");
             prefs.edit().putInt("bridge_battery",0).apply();
@@ -105,8 +106,7 @@ public class DexCollectionService extends Service {
             return START_NOT_STICKY;
         }
         if (CollectionServiceStarter.isBTWixel(getApplicationContext())
-                || CollectionServiceStarter.isDexbridgeWixel(getApplicationContext())
-                || CollectionServiceStarter.isWifiandBTWixel(getApplicationContext())) {
+                || CollectionServiceStarter.isDexbridgeWixel(getApplicationContext())) {
             setFailoverTimer();
         } else {
             stopSelf();
@@ -124,7 +124,7 @@ public class DexCollectionService extends Service {
         close();
         foregroundServiceStarter.stop();
         setRetryTimer();
-        BgToSpeech.tearDownTTS();
+        //BgToSpeech.tearDownTTS();
         Log.i(TAG, "SERVICE STOPPED");
     }
 
@@ -155,8 +155,7 @@ public class DexCollectionService extends Service {
 
     public void setRetryTimer() {
         if (CollectionServiceStarter.isBTWixel(getApplicationContext())
-                || CollectionServiceStarter.isDexbridgeWixel(getApplicationContext())
-                || CollectionServiceStarter.isWifiandBTWixel(getApplicationContext())) {
+                || CollectionServiceStarter.isDexbridgeWixel(getApplicationContext())) {
             long retry_in;
             if(CollectionServiceStarter.isDexbridgeWixel(getApplicationContext())) {
                 retry_in = (1000 * 25);
@@ -179,8 +178,7 @@ public class DexCollectionService extends Service {
 
     public void setFailoverTimer() {
         if (CollectionServiceStarter.isBTWixel(getApplicationContext())
-                || CollectionServiceStarter.isDexbridgeWixel(getApplicationContext())
-                || CollectionServiceStarter.isWifiandBTWixel(getApplicationContext())) {
+                || CollectionServiceStarter.isDexbridgeWixel(getApplicationContext())) {
 
             long retry_in = (1000 * 60 * 6);
             Log.d(TAG, "setFailoverTimer: Fallover Restarting in: " + (retry_in / (60 * 1000)) + " minutes");
@@ -504,7 +502,7 @@ public class DexCollectionService extends Service {
         if (transmitterData == null) {
             return;
         }
-
+/*
         Sensor sensor = Sensor.currentSensor();
         if (sensor == null) {
             Log.i(TAG, "setSerialDataToTransmitterRawData: No Active Sensor, Data only stored in Transmitter Data");
@@ -512,6 +510,7 @@ public class DexCollectionService extends Service {
         }
 
         Sensor.updateBatteryLevel(sensor, transmitterData.sensor_battery_level);
-        BgReading.create(transmitterData.raw_data, transmitterData.filtered_data, this, timestamp);
+        */
+        //BgReading.create(transmitterData.raw_data, transmitterData.filtered_data, this, timestamp);
     }
 }

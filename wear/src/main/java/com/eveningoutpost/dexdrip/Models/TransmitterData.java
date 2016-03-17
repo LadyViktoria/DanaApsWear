@@ -1,7 +1,7 @@
 package com.eveningoutpost.dexdrip.Models;
 
 import android.provider.BaseColumns;
-import com.eveningoutpost.dexdrip.Models.UserError.Log;
+import android.util.Log;
 
 import com.activeandroid.Model;
 import com.activeandroid.annotation.Column;

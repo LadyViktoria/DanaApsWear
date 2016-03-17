@@ -6,9 +6,7 @@ import android.content.SharedPreferences;
 import android.os.Handler;
 import android.os.Looper;
 import android.preference.PreferenceManager;
-import com.eveningoutpost.dexdrip.Models.UserError.Log;
-
-import java.util.Date;
+import android.util.Log;
 
 /**
  * Created by stephenblack on 12/25/14.
@@ -34,7 +32,7 @@ public class ForegroundServiceStarter {
             mHandler.post(new Runnable() {
                 @Override
                 public void run() {
-                    mService.startForeground(new Notifications().ongoingNotificationId, new Notifications().createOngoingNotification(mContext));
+                   // mService.startForeground(new Notifications().ongoingNotificationId, new Notifications().createOngoingNotification(mContext));
                 }
             });
         }
