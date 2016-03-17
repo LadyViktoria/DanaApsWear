@@ -1,1 +1,1 @@
-include ':mobile', ':wear'
+include ':mobile', ':wear', ':ActiveAndroid', ':bson-3.1.0-rc0'

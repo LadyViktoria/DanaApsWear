@@ -8,6 +8,8 @@ import android.support.wearable.view.BoxInsetLayout;
 import android.view.View;
 import android.widget.TextView;
 
+import com.eveningoutpost.dexdrip.Services.DexCollectionService;
+
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
