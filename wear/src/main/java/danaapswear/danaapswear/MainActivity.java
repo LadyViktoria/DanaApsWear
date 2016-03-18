@@ -4,12 +4,16 @@ package danaapswear.danaapswear;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.view.WindowManager;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 
-import com.eveningoutpost.dexdrip.UtilityModels.CollectionServiceStarter;
+import com.activeandroid.query.Select;
+import com.eveningoutpost.dexdrip.Models.ActiveBluetoothDevice;
+import com.eveningoutpost.dexdrip.Services.DexCollectionService;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.wearable.MessageApi;
 import com.google.android.gms.wearable.MessageEvent;
@@ -24,7 +28,6 @@ public class MainActivity extends Activity implements MessageApi.MessageListener
     private ListView mListView;
     private static Context mContext;
 
-
     public static Context getContext() {
         return mContext;
     }
@@ -37,7 +40,8 @@ public class MainActivity extends Activity implements MessageApi.MessageListener
         mListView = (ListView) findViewById(R.id.list);
         //setAmbientEnabled();
         mContext = getApplicationContext();
-        mContext.startService(new Intent(mContext, CollectionServiceStarter.class));
+        mContext.startService(new Intent(mContext, DexCollectionService.class));
+
 
         mAdapter = new ArrayAdapter<String>( this, R.layout.list_item );
         mListView.setAdapter( mAdapter );
@@ -45,7 +49,43 @@ public class MainActivity extends Activity implements MessageApi.MessageListener
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
         initGoogleApiClient();
+        initBTDevice();
     }
+
+
+    private void initBTDevice()
+
+    {
+
+        String getAddress = "B4:99:4C:67:5E:67";
+        String getName = "xbridge";
+        String collectionMethod = "DexbridgeWixel";
+        String txid = "6BBKU";
+
+        final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+        prefs.edit().putString("last_connected_device_address", getAddress).apply();
+        prefs.edit().putString("dex_collection_method", collectionMethod).apply();
+        prefs.edit().putString("dex_txid", txid).apply();
+
+
+
+        ActiveBluetoothDevice btDevice = new Select().from(ActiveBluetoothDevice.class)
+                .orderBy("_ID desc")
+                .executeSingle();
+
+        if (btDevice == null) {
+            ActiveBluetoothDevice newBtDevice = new ActiveBluetoothDevice();
+            newBtDevice.name = getName;
+            newBtDevice.address = getAddress;
+            newBtDevice.save();
+        } else {
+            btDevice.name = getName;
+            btDevice.address = getAddress;
+            btDevice.save();
+        }
+    }
+
+
 
     private void initGoogleApiClient() {
         mApiClient = new GoogleApiClient.Builder( this )

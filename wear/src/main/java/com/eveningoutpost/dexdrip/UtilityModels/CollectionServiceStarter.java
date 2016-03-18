@@ -18,11 +18,14 @@ import java.io.IOException;
 /**
  * Created by stephenblack on 12/22/14.
  */
+
+
 public class CollectionServiceStarter {
+
+
+
     private Context mContext;
-
     private final static String TAG = CollectionServiceStarter.class.getSimpleName();
-
 
 
     public static boolean isBTWixel(Context context) {

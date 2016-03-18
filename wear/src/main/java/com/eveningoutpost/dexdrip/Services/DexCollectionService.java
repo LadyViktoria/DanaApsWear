@@ -52,82 +52,31 @@ import java.util.UUID;
 //import com.eveningoutpost.dexdrip.Models.BgReading;
 //import com.eveningoutpost.dexdrip.Models.Sensor;
 
+//import com.eveningoutpost.dexdrip.Models.BgReading;
+//import com.eveningoutpost.dexdrip.Models.Sensor;
+
 //import com.eveningoutpost.dexdrip.utils.BgToSpeech;
 
 @TargetApi(Build.VERSION_CODES.KITKAT)
 public class DexCollectionService extends Service {
     private final static String TAG = DexCollectionService.class.getSimpleName();
-    private SharedPreferences prefs;
+    private static final int STATE_DISCONNECTED = BluetoothProfile.STATE_DISCONNECTED;
+    private static final int STATE_DISCONNECTING = BluetoothProfile.STATE_DISCONNECTING;
+    private static final int STATE_CONNECTING = BluetoothProfile.STATE_CONNECTING;
+    private static final int STATE_CONNECTED = BluetoothProfile.STATE_CONNECTED;
+    public final UUID xDripDataService = UUID.fromString(HM10Attributes.HM_10_SERVICE);
+    public final UUID xDripDataCharacteristic = UUID.fromString(HM10Attributes.HM_RX_TX);
     //private BgToSpeech bgToSpeech;
     public DexCollectionService dexCollectionService;
-
+    long lastPacketTime;
+    private SharedPreferences prefs;
     private BluetoothAdapter mBluetoothAdapter;
     private BluetoothGatt mBluetoothGatt;
     private ForegroundServiceStarter foregroundServiceStarter;
     private int mConnectionState = BluetoothProfile.STATE_DISCONNECTING;
     private BluetoothDevice device;
     private BluetoothGattCharacteristic mCharacteristic;
-    long lastPacketTime;
     private byte[] lastdata = null;
-    private Context mContext;
-    private static final int STATE_DISCONNECTED = BluetoothProfile.STATE_DISCONNECTED;
-    private static final int STATE_DISCONNECTING = BluetoothProfile.STATE_DISCONNECTING;
-    private static final int STATE_CONNECTING = BluetoothProfile.STATE_CONNECTING;
-    private static final int STATE_CONNECTED = BluetoothProfile.STATE_CONNECTED;
-
-    public final UUID xDripDataService = UUID.fromString(HM10Attributes.HM_10_SERVICE);
-    public final UUID xDripDataCharacteristic = UUID.fromString(HM10Attributes.HM_RX_TX);
-
-    @Override
-    public IBinder onBind(Intent intent) {
-        throw new UnsupportedOperationException("Not yet implemented");
-    }
-
-    @Override
-    public void onCreate() {
-        foregroundServiceStarter = new ForegroundServiceStarter(getApplicationContext(), this);
-        foregroundServiceStarter.start();
-        mContext = getApplicationContext();
-        dexCollectionService = this;
-        prefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
-        listenForChangeInSettings();
-      //  bgToSpeech = BgToSpeech.setupTTS(mContext); //keep reference to not being garbage collected
-        if(CollectionServiceStarter.isDexbridgeWixel(getApplicationContext())){
-            Log.i(TAG,"onCreate: resetting bridge_battery preference to 0");
-            prefs.edit().putInt("bridge_battery",0).apply();
-        }
-        Log.i(TAG, "onCreate: STARTING SERVICE");
-    }
-
-    @Override
-    public int onStartCommand(Intent intent, int flags, int startId) {
-        if (android.os.Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN_MR2){
-            stopSelf();
-            return START_NOT_STICKY;
-        }
-        if (CollectionServiceStarter.isBTWixel(getApplicationContext())
-                || CollectionServiceStarter.isDexbridgeWixel(getApplicationContext())) {
-            setFailoverTimer();
-        } else {
-            stopSelf();
-            return START_NOT_STICKY;
-        }
-        lastdata = null;
-        attemptConnection();
-        return START_STICKY;
-    }
-
-    @Override
-    public void onDestroy() {
-        super.onDestroy();
-        Log.d(TAG, "onDestroy entered");
-        close();
-        foregroundServiceStarter.stop();
-        setRetryTimer();
-        //BgToSpeech.tearDownTTS();
-        Log.i(TAG, "SERVICE STOPPED");
-    }
-
     public SharedPreferences.OnSharedPreferenceChangeListener prefListener = new SharedPreferences.OnSharedPreferenceChangeListener() {
         public void onSharedPreferenceChanged(SharedPreferences prefs, String key) {
             if (key.compareTo("run_service_in_foreground") == 0) {
@@ -141,118 +90,14 @@ public class DexCollectionService extends Service {
                     Log.d(TAG, "Removing from foreground");
                 }
             }
-            if(key.equals("dex_collection_method") || key.equals("dex_txid")){
+            if (key.equals("dex_collection_method") || key.equals("dex_txid")) {
                 //if the input method or ID changed, accept any new package once even if they seem duplicates
                 Log.d(TAG, "collection method or txID changed - setting lastdata to null");
                 lastdata = null;
             }
         }
     };
-
-    public void listenForChangeInSettings() {
-        prefs.registerOnSharedPreferenceChangeListener(prefListener);
-    }
-
-    public void setRetryTimer() {
-        if (CollectionServiceStarter.isBTWixel(getApplicationContext())
-                || CollectionServiceStarter.isDexbridgeWixel(getApplicationContext())) {
-            long retry_in;
-            if(CollectionServiceStarter.isDexbridgeWixel(getApplicationContext())) {
-                retry_in = (1000 * 25);
-            }else {
-                retry_in = (1000*65);
-            }
-            Log.d(TAG, "setRetryTimer: Restarting in: " + (retry_in / 1000) + " seconds");
-            Calendar calendar = Calendar.getInstance();
-            AlarmManager alarm = (AlarmManager) getSystemService(ALARM_SERVICE);
-            long wakeTime = calendar.getTimeInMillis() + retry_in;
-            PendingIntent serviceIntent = PendingIntent.getService(this, 0, new Intent(this, this.getClass()), 0);
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                alarm.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, wakeTime, serviceIntent);
-            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-                alarm.setExact(AlarmManager.RTC_WAKEUP, wakeTime, serviceIntent);
-            } else
-                alarm.set(AlarmManager.RTC_WAKEUP, wakeTime, serviceIntent);
-        }
-    }
-
-    public void setFailoverTimer() {
-        if (CollectionServiceStarter.isBTWixel(getApplicationContext())
-                || CollectionServiceStarter.isDexbridgeWixel(getApplicationContext())) {
-
-            long retry_in = (1000 * 60 * 6);
-            Log.d(TAG, "setFailoverTimer: Fallover Restarting in: " + (retry_in / (60 * 1000)) + " minutes");
-            Calendar calendar = Calendar.getInstance();
-            AlarmManager alarm = (AlarmManager) getSystemService(ALARM_SERVICE);
-            long wakeTime = calendar.getTimeInMillis() + retry_in;
-            PendingIntent serviceIntent = PendingIntent.getService(this, 0, new Intent(this, this.getClass()), 0);
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                alarm.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, wakeTime, serviceIntent);
-            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-                alarm.setExact(AlarmManager.RTC_WAKEUP, wakeTime, serviceIntent);
-            } else
-                alarm.set(AlarmManager.RTC_WAKEUP, wakeTime, serviceIntent);
-        } else {
-            stopSelf();
-        }
-    }
-
-
-    public void attemptConnection() {
-        final BluetoothManager bluetoothManager = (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
-        if (bluetoothManager == null) {
-            setRetryTimer();
-            return;
-        }
-
-        mBluetoothAdapter = bluetoothManager.getAdapter();
-        if (mBluetoothAdapter == null) {
-            setRetryTimer();
-            return;
-        }
-
-        if (device != null) {
-            mConnectionState = STATE_DISCONNECTED;
-            for (BluetoothDevice bluetoothDevice : bluetoothManager.getConnectedDevices(BluetoothProfile.GATT)) {
-                if (bluetoothDevice.getAddress().compareTo(device.getAddress()) == 0) {
-                    mConnectionState = STATE_CONNECTED;
-                }
-            }
-        }
-
-        Log.i(TAG, "attemptConnection: Connection state: " + getStateStr(mConnectionState));
-        if (mConnectionState == STATE_DISCONNECTED || mConnectionState == STATE_DISCONNECTING) {
-            ActiveBluetoothDevice btDevice = ActiveBluetoothDevice.first();
-            if (btDevice != null) {
-                String deviceAddress = btDevice.address;
-                if (mBluetoothAdapter.isEnabled() && mBluetoothAdapter.getRemoteDevice(deviceAddress) != null) {
-                    connect(deviceAddress);
-                    return;
-                }
-            }
-        } else if (mConnectionState == STATE_CONNECTED) { //WOOO, we are good to go, nothing to do here!
-            Log.i(TAG, "attemptConnection: Looks like we are already connected, going to read!");
-            return;
-        }
-
-        setRetryTimer();
-    }
-
-    private String getStateStr(int mConnectionState) {
-        switch (mConnectionState){
-            case STATE_CONNECTED:
-                return "CONNECTED";
-            case STATE_CONNECTING:
-                return "CONNECTING";
-            case STATE_DISCONNECTED:
-                return "DISCONNECTED";
-            case STATE_DISCONNECTING:
-                return "DISCONNECTING";
-            default:
-                return "UNKNOWN STATE!";
-        }
-    }
-
+    private Context mContext;
     private final BluetoothGattCallback mGattCallback = new BluetoothGattCallback() {
         @Override
         public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
@@ -344,8 +189,163 @@ public class DexCollectionService extends Service {
         }
     };
 
+    @Override
+    public IBinder onBind(Intent intent) {
+        throw new UnsupportedOperationException("Not yet implemented");
+    }
+
+    @Override
+    public void onCreate() {
+        foregroundServiceStarter = new ForegroundServiceStarter(getApplicationContext(), this);
+        foregroundServiceStarter.start();
+        mContext = getApplicationContext();
+        dexCollectionService = this;
+        prefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+        listenForChangeInSettings();
+        //  bgToSpeech = BgToSpeech.setupTTS(mContext); //keep reference to not being garbage collected
+        if (CollectionServiceStarter.isDexbridgeWixel(getApplicationContext())) {
+            Log.i(TAG, "onCreate: resetting bridge_battery preference to 0");
+            prefs.edit().putInt("bridge_battery", 0).apply();
+        }
+        Log.i(TAG, "onCreate: STARTING SERVICE");
+    }
+
+    @Override
+    public int onStartCommand(Intent intent, int flags, int startId) {
+        if (android.os.Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN_MR2) {
+            stopSelf();
+            return START_NOT_STICKY;
+        }
+        if (CollectionServiceStarter.isBTWixel(getApplicationContext())
+                || CollectionServiceStarter.isDexbridgeWixel(getApplicationContext())) {
+            setFailoverTimer();
+        } else {
+            stopSelf();
+            return START_NOT_STICKY;
+        }
+        lastdata = null;
+        attemptConnection();
+        return START_STICKY;
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        Log.d(TAG, "onDestroy entered");
+        close();
+        foregroundServiceStarter.stop();
+        setRetryTimer();
+        //BgToSpeech.tearDownTTS();
+        Log.i(TAG, "SERVICE STOPPED");
+    }
+
+    public void listenForChangeInSettings() {
+        prefs.registerOnSharedPreferenceChangeListener(prefListener);
+    }
+
+    public void setRetryTimer() {
+        if (CollectionServiceStarter.isBTWixel(getApplicationContext())
+                || CollectionServiceStarter.isDexbridgeWixel(getApplicationContext())) {
+            long retry_in;
+            if (CollectionServiceStarter.isDexbridgeWixel(getApplicationContext())) {
+                retry_in = (1000 * 25);
+            } else {
+                retry_in = (1000 * 65);
+            }
+            Log.d(TAG, "setRetryTimer: Restarting in: " + (retry_in / 1000) + " seconds");
+            Calendar calendar = Calendar.getInstance();
+            AlarmManager alarm = (AlarmManager) getSystemService(ALARM_SERVICE);
+            long wakeTime = calendar.getTimeInMillis() + retry_in;
+            PendingIntent serviceIntent = PendingIntent.getService(this, 0, new Intent(this, this.getClass()), 0);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                alarm.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, wakeTime, serviceIntent);
+            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+                alarm.setExact(AlarmManager.RTC_WAKEUP, wakeTime, serviceIntent);
+            } else
+                alarm.set(AlarmManager.RTC_WAKEUP, wakeTime, serviceIntent);
+        }
+    }
+
+    public void setFailoverTimer() {
+        if (CollectionServiceStarter.isBTWixel(getApplicationContext())
+                || CollectionServiceStarter.isDexbridgeWixel(getApplicationContext())) {
+
+            long retry_in = (1000 * 60 * 6);
+            Log.d(TAG, "setFailoverTimer: Fallover Restarting in: " + (retry_in / (60 * 1000)) + " minutes");
+            Calendar calendar = Calendar.getInstance();
+            AlarmManager alarm = (AlarmManager) getSystemService(ALARM_SERVICE);
+            long wakeTime = calendar.getTimeInMillis() + retry_in;
+            PendingIntent serviceIntent = PendingIntent.getService(this, 0, new Intent(this, this.getClass()), 0);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                alarm.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, wakeTime, serviceIntent);
+            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+                alarm.setExact(AlarmManager.RTC_WAKEUP, wakeTime, serviceIntent);
+            } else
+                alarm.set(AlarmManager.RTC_WAKEUP, wakeTime, serviceIntent);
+        } else {
+            stopSelf();
+        }
+    }
+
+    public void attemptConnection() {
+        final BluetoothManager bluetoothManager = (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
+        if (bluetoothManager == null) {
+            setRetryTimer();
+            return;
+        }
+
+        mBluetoothAdapter = bluetoothManager.getAdapter();
+        if (mBluetoothAdapter == null) {
+            setRetryTimer();
+            return;
+        }
+
+        if (device != null) {
+            mConnectionState = STATE_DISCONNECTED;
+            for (BluetoothDevice bluetoothDevice : bluetoothManager.getConnectedDevices(BluetoothProfile.GATT)) {
+                if (bluetoothDevice.getAddress().compareTo(device.getAddress()) == 0) {
+                    mConnectionState = STATE_CONNECTED;
+                }
+            }
+        }
+
+        Log.i(TAG, "attemptConnection: Connection state: " + getStateStr(mConnectionState));
+
+        if (mConnectionState == STATE_DISCONNECTED || mConnectionState == STATE_DISCONNECTING) {
+            ActiveBluetoothDevice btDevice = ActiveBluetoothDevice.first();
+            if (btDevice != null) {
+                String deviceAddress = btDevice.address;
+                if (mBluetoothAdapter.isEnabled() && mBluetoothAdapter.getRemoteDevice(deviceAddress) != null) {
+                    connect(deviceAddress);
+                    return;
+                }
+            }
+        } else if (mConnectionState == STATE_CONNECTED) { //WOOO, we are good to go, nothing to do here!
+            Log.i(TAG, "attemptConnection: Looks like we are already connected, going to read!");
+            return;
+        }
+
+        setRetryTimer();
+    }
+
+    private String getStateStr(int mConnectionState) {
+        switch (mConnectionState) {
+            case STATE_CONNECTED:
+                return "CONNECTED";
+            case STATE_CONNECTING:
+                return "CONNECTING";
+            case STATE_DISCONNECTED:
+                return "DISCONNECTED";
+            case STATE_DISCONNECTING:
+                return "DISCONNECTING";
+            default:
+                return "UNKNOWN STATE!";
+        }
+    }
+
     /**
      * Displays all services and characteristics for debugging purposes.
+     *
      * @param bluetoothGatt BLE gatt profile.
      */
     private void listAvailableServices(BluetoothGatt bluetoothGatt) {
