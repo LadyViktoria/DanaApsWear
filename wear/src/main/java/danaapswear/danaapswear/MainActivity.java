@@ -3,7 +3,6 @@ package danaapswear.danaapswear;
 
 import android.app.Activity;
 import android.content.Context;
-import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
@@ -13,7 +12,7 @@ import android.widget.ListView;
 
 import com.activeandroid.query.Select;
 import com.eveningoutpost.dexdrip.Models.ActiveBluetoothDevice;
-import com.eveningoutpost.dexdrip.Services.DexCollectionService;
+import com.eveningoutpost.dexdrip.UtilityModels.CollectionServiceStarter;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.wearable.MessageApi;
 import com.google.android.gms.wearable.MessageEvent;
@@ -26,11 +25,6 @@ public class MainActivity extends Activity implements MessageApi.MessageListener
     private ArrayAdapter<String> mAdapter;
 
     private ListView mListView;
-    private static Context mContext;
-
-    public static Context getContext() {
-        return mContext;
-    }
 
 
     @Override
@@ -38,10 +32,10 @@ public class MainActivity extends Activity implements MessageApi.MessageListener
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         mListView = (ListView) findViewById(R.id.list);
-        //setAmbientEnabled();
-        mContext = getApplicationContext();
-        mContext.startService(new Intent(mContext, DexCollectionService.class));
 
+        Context context = getApplicationContext();
+        CollectionServiceStarter collectionServiceStarter = new CollectionServiceStarter(context);
+        collectionServiceStarter.start(getApplicationContext());
 
         mAdapter = new ArrayAdapter<String>( this, R.layout.list_item );
         mListView.setAdapter( mAdapter );
@@ -53,9 +47,7 @@ public class MainActivity extends Activity implements MessageApi.MessageListener
     }
 
 
-    private void initBTDevice()
-
-    {
+    private void initBTDevice(){
 
         String getAddress = "B4:99:4C:67:5E:67";
         String getName = "xbridge";
