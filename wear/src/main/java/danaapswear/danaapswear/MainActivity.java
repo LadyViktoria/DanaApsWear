@@ -11,11 +11,17 @@ import android.preference.PreferenceManager;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.wearable.activity.WearableActivity;
 import android.support.wearable.view.WatchViewStub;
+import android.util.Log;
+import android.view.MotionEvent;
 import android.widget.TextView;
 
 import com.activeandroid.query.Select;
 import com.eveningoutpost.dexdrip.Models.ActiveBluetoothDevice;
+import com.eveningoutpost.dexdrip.Models.BgReading;
+import com.eveningoutpost.dexdrip.Models.Sensor;
 import com.eveningoutpost.dexdrip.UtilityModels.CollectionServiceStarter;
+
+import java.util.Calendar;
 
 public class MainActivity extends WearableActivity {
 
@@ -44,15 +50,53 @@ public class MainActivity extends WearableActivity {
         Context context = getApplicationContext();
         CollectionServiceStarter collectionServiceStarter = new CollectionServiceStarter(context);
         collectionServiceStarter.start(getApplicationContext());
+    }
 
+    // listen for touch activity
+    @Override
+    public boolean dispatchTouchEvent(MotionEvent ev) {
+        Log.d("debug", "dispatchTouchEvent");
+        showBG();
+        sensorActivity();
+        return  super.dispatchTouchEvent(ev);
+    }
+
+    public void showBG(){
+        BgReading lastBgreading = BgReading.last();
+        Log.d("BGREADING", "BGReading:" +lastBgreading);
 
     }
 
+    public void sensorActivity(){
+
+
+        if (Sensor.isActive()) {
+            Log.d("Sensor", "sensor is active:" + Sensor.isActive());
+            Log.d("Sensor", "Current Sensor started at " + Sensor.currentSensor());
+
+
+        }
+        else {
+            Log.d("Sensor", "sensor is not active:" + Sensor.isActive());
+            Log.d("Sensor", "Current Sensor started at " + Sensor.currentSensor());
+            Calendar kalender = Calendar.getInstance();
+
+            kalender.set(Calendar.DATE, 22);
+            kalender.set(Calendar.MONTH, 2 - 1);
+            kalender.set(Calendar.YEAR, 2016);
+            kalender.set(Calendar.HOUR_OF_DAY, 13);
+            kalender.set(Calendar.MINUTE, 55);
+            kalender.set(Calendar.SECOND, 0);
+
+            long startTime = kalender.getTime().getTime();
+            Sensor.create(startTime);
+            Log.d("NEW SENSOR", "New Sensor started at " + startTime);
+
+        }
+    }
 
 
     private void initBTDevice() {
-
-
         String getName =  PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).getString("getName", "");
         String getAddress =  PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).getString("last_connected_device_address", "00:00:00:00:00:00");
 
@@ -95,5 +139,3 @@ public class MainActivity extends WearableActivity {
         }
     }
 }
-
-

@@ -38,6 +38,8 @@ import android.preference.PreferenceManager;
 import android.util.Log;
 
 import com.eveningoutpost.dexdrip.Models.ActiveBluetoothDevice;
+import com.eveningoutpost.dexdrip.Models.BgReading;
+import com.eveningoutpost.dexdrip.Models.Sensor;
 import com.eveningoutpost.dexdrip.Models.TransmitterData;
 import com.eveningoutpost.dexdrip.UtilityModels.CollectionServiceStarter;
 import com.eveningoutpost.dexdrip.UtilityModels.ForegroundServiceStarter;
@@ -48,12 +50,6 @@ import java.nio.ByteOrder;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.UUID;
-
-//import com.eveningoutpost.dexdrip.Models.BgReading;
-//import com.eveningoutpost.dexdrip.Models.Sensor;
-
-//import com.eveningoutpost.dexdrip.Models.BgReading;
-//import com.eveningoutpost.dexdrip.Models.Sensor;
 
 //import com.eveningoutpost.dexdrip.utils.BgToSpeech;
 
@@ -502,7 +498,7 @@ public class DexCollectionService extends Service {
         if (transmitterData == null) {
             return;
         }
-/*
+
         Sensor sensor = Sensor.currentSensor();
         if (sensor == null) {
             Log.i(TAG, "setSerialDataToTransmitterRawData: No Active Sensor, Data only stored in Transmitter Data");
@@ -510,7 +506,7 @@ public class DexCollectionService extends Service {
         }
 
         Sensor.updateBatteryLevel(sensor, transmitterData.sensor_battery_level);
-        */
-        //BgReading.create(transmitterData.raw_data, transmitterData.filtered_data, this, timestamp);
+
+        BgReading.create(transmitterData.raw_data, transmitterData.filtered_data, this, timestamp);
     }
 }
