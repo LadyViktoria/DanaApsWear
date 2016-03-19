@@ -1,106 +1,127 @@
 package danaapswear.danaapswear;
 
-import android.app.Activity;
 import android.os.Bundle;
-import android.text.TextUtils;
-import android.view.View;
-import android.widget.ArrayAdapter;
-import android.widget.Button;
-import android.widget.EditText;
-import android.widget.ListView;
+import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
 
+import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
-import com.google.android.gms.wearable.MessageApi;
-import com.google.android.gms.wearable.Node;
-import com.google.android.gms.wearable.NodeApi;
+import com.google.android.gms.wearable.DataApi;
+import com.google.android.gms.wearable.DataMap;
+import com.google.android.gms.wearable.PutDataMapRequest;
+import com.google.android.gms.wearable.PutDataRequest;
 import com.google.android.gms.wearable.Wearable;
 
+import java.util.Date;
 
-public class MainActivity extends Activity implements GoogleApiClient.ConnectionCallbacks {
 
-    private static final String START_ACTIVITY = "/start_activity";
-    private static final String WEAR_MESSAGE_PATH = "/message";
+public class MainActivity extends AppCompatActivity implements
+        GoogleApiClient.ConnectionCallbacks,
+        GoogleApiClient.OnConnectionFailedListener{
 
-    private GoogleApiClient mApiClient;
-
-    private ArrayAdapter<String> mAdapter;
-
-    private ListView mListView;
-    private EditText mEditText;
-    private Button mSendButton;
+    GoogleApiClient googleClient;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        init();
-        initGoogleApiClient();
-    }
-
-    private void initGoogleApiClient() {
-        mApiClient = new GoogleApiClient.Builder( this )
-                .addApi( Wearable.API )
+        // Build a new GoogleApiClient for the the Wearable API
+        googleClient = new GoogleApiClient.Builder(this)
+                .addApi(Wearable.API)
+                .addConnectionCallbacks(this)
+                .addOnConnectionFailedListener(this)
                 .build();
+    }
 
-        mApiClient.connect();
+    // Connect to the data layer when the Activity starts
+    @Override
+    protected void onStart() {
+        super.onStart();
+        googleClient.connect();
     }
 
     @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        mApiClient.disconnect();
+    public void onConnected(Bundle connectionHint) {
+
+        String WEARABLE_DATA_PATH = "/wearable_data";
+
+        // Create a DataMap object and send it to the data layer
+        DataMap dataMap = new DataMap();
+        dataMap.putLong("time", new Date().getTime());
+        dataMap.putString("getAddress", "B4:99:4C:67:5E:67");
+        dataMap.putString("collectionMethod", "DexbridgeWixel");
+        dataMap.putString("txid", "6BBKU");
+        dataMap.putString("getName", "xbridge");
+
+
+        //Requires a new thread to avoid blocking the UI
+        new SendToDataLayerThread(WEARABLE_DATA_PATH, dataMap).start();
     }
 
-    private void init() {
-        mListView = (ListView) findViewById( R.id.list_view );
-        mEditText = (EditText) findViewById( R.id.input );
-        mSendButton = (Button) findViewById( R.id.btn_send );
+    // Disconnect from the data layer when the Activity stops
+    @Override
+    protected void onStop() {
+        if (null != googleClient && googleClient.isConnected()) {
+            googleClient.disconnect();
+        }
+        super.onStop();
+    }
 
-        mAdapter = new ArrayAdapter<String>( this, android.R.layout.simple_list_item_1 );
-        mListView.setAdapter( mAdapter );
+    // Placeholders for required connection callbacks
+    @Override
+    public void onConnectionSuspended(int cause) { }
 
-        mSendButton.setOnClickListener( new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                String text = mEditText.getText().toString();
-                if (!TextUtils.isEmpty(text)) {
-                    mAdapter.add(text);
-                    mAdapter.notifyDataSetChanged();
+    @Override
+    public void onConnectionFailed(ConnectionResult connectionResult) { }
 
-                    sendMessage(WEAR_MESSAGE_PATH, text);
-                }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        // Inflate the menu; this adds items to the action bar if it is present.
+        getMenuInflater().inflate(R.menu.menu_main, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        // Handle action bar item clicks here. The action bar will
+        // automatically handle clicks on the Home/Up button, so long
+        // as you specify a parent activity in AndroidManifest.xml.
+        int id = item.getItemId();
+
+        //noinspection SimplifiableIfStatement
+        if (id == R.id.action_settings) {
+            return true;
+        }
+
+        return super.onOptionsItemSelected(item);
+    }
+
+    class SendToDataLayerThread extends Thread {
+        String path;
+        DataMap dataMap;
+
+        // Constructor for sending data objects to the data layer
+        SendToDataLayerThread(String p, DataMap data) {
+            path = p;
+            dataMap = data;
+        }
+
+        public void run() {
+            // Construct a DataRequest and send over the data layer
+            PutDataMapRequest putDMR = PutDataMapRequest.create(path);
+            putDMR.getDataMap().putAll(dataMap);
+            PutDataRequest request = putDMR.asPutDataRequest();
+            DataApi.DataItemResult result = Wearable.DataApi.putDataItem(googleClient, request).await();
+            if (result.getStatus().isSuccess()) {
+                Log.v("myTag", "DataMap: " + dataMap + " sent successfully to data layer ");
+            } else {
+                // Log an error
+                Log.v("myTag", "ERROR: failed to send DataMap to data layer");
             }
-        });
-    }
-
-    private void sendMessage( final String path, final String text ) {
-        new Thread( new Runnable() {
-            @Override
-            public void run() {
-                NodeApi.GetConnectedNodesResult nodes = Wearable.NodeApi.getConnectedNodes( mApiClient ).await();
-                for(Node node : nodes.getNodes()) {
-                    MessageApi.SendMessageResult result = Wearable.MessageApi.sendMessage(
-                            mApiClient, node.getId(), path, text.getBytes() ).await();
-                }
-
-                runOnUiThread( new Runnable() {
-                    @Override
-                    public void run() {
-                        mEditText.setText( "" );
-                    }
-                });
-            }
-        }).start();
-    }
-
-    @Override
-    public void onConnected(Bundle bundle) {
-        sendMessage(START_ACTIVITY, "");
-    }
-
-    @Override
-    public void onConnectionSuspended(int i) {
-
+        }
     }
 }

@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-       <string name="app_name">DanaApsWear</string>
-       <string name="hello_world">meow</string>
-       <string name="collection_method">1234</string>
-    <string name="last_connected_device_address">1234234324</string>
+    <string name="app_name">DanaApsWear</string>
+    <string name="hello_world">meow</string>
+    <string name="hello_round">Hello Round World!</string>
+    <string name="hello_square">Hello Square World!</string>
 
 
 

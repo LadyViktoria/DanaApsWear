@@ -1,65 +1,60 @@
 package danaapswear.danaapswear;
 
 
-import android.app.Activity;
+import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
-import android.view.WindowManager;
-import android.widget.ArrayAdapter;
-import android.widget.ListView;
+import android.support.v4.content.LocalBroadcastManager;
+import android.support.wearable.activity.WearableActivity;
+import android.support.wearable.view.WatchViewStub;
+import android.widget.TextView;
 
 import com.activeandroid.query.Select;
 import com.eveningoutpost.dexdrip.Models.ActiveBluetoothDevice;
 import com.eveningoutpost.dexdrip.UtilityModels.CollectionServiceStarter;
-import com.google.android.gms.common.api.GoogleApiClient;
-import com.google.android.gms.wearable.MessageApi;
-import com.google.android.gms.wearable.MessageEvent;
-import com.google.android.gms.wearable.Wearable;
 
-public class MainActivity extends Activity implements MessageApi.MessageListener, GoogleApiClient.ConnectionCallbacks {
+public class MainActivity extends WearableActivity {
 
-    private static final String WEAR_MESSAGE_PATH = "/message";
-    private GoogleApiClient mApiClient;
-    private ArrayAdapter<String> mAdapter;
-
-    private ListView mListView;
-
+    private TextView mTextView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        mListView = (ListView) findViewById(R.id.list);
+        final WatchViewStub stub = (WatchViewStub) findViewById(R.id.watch_view_stub);
+        stub.setOnLayoutInflatedListener(new WatchViewStub.OnLayoutInflatedListener() {
+            @Override
+            public void onLayoutInflated(WatchViewStub stub) {
+                mTextView = (TextView) stub.findViewById(R.id.text);
+            }
+        });
 
+        setAmbientEnabled();
+
+        // Register the local broadcast receiver
+        IntentFilter messageFilter = new IntentFilter(Intent.ACTION_SEND);
+        MessageReceiver messageReceiver = new MessageReceiver();
+        LocalBroadcastManager.getInstance(this).registerReceiver(messageReceiver, messageFilter);
+
+        //start collectionservice
         Context context = getApplicationContext();
         CollectionServiceStarter collectionServiceStarter = new CollectionServiceStarter(context);
         collectionServiceStarter.start(getApplicationContext());
 
-        mAdapter = new ArrayAdapter<String>( this, R.layout.list_item );
-        mListView.setAdapter( mAdapter );
 
-        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-
-        initGoogleApiClient();
-        initBTDevice();
     }
 
 
-    private void initBTDevice(){
 
-        String getAddress = "B4:99:4C:67:5E:67";
-        String getName = "xbridge";
-        String collectionMethod = "DexbridgeWixel";
-        String txid = "6BBKU";
-
-        final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
-        prefs.edit().putString("last_connected_device_address", getAddress).apply();
-        prefs.edit().putString("dex_collection_method", collectionMethod).apply();
-        prefs.edit().putString("dex_txid", txid).apply();
+    private void initBTDevice() {
 
 
+        String getName =  PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).getString("getName", "");
+        String getAddress =  PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).getString("last_connected_device_address", "00:00:00:00:00:00");
 
         ActiveBluetoothDevice btDevice = new Select().from(ActiveBluetoothDevice.class)
                 .orderBy("_ID desc")
@@ -77,69 +72,27 @@ public class MainActivity extends Activity implements MessageApi.MessageListener
         }
     }
 
+    public class MessageReceiver extends BroadcastReceiver {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            Bundle data = intent.getBundleExtra("datamap");
+            // Display rceiveed data in UI
+            String display = "Received from the data Layer\n" +
+                    "Bluetooth MAC" + data.getString("getAddress") + "\n" +
+                    "collectionMethod: " + data.getString("collectionMethod") + "\n" +
+                    "Transmitter ID: "+ data.getString("txid") + "\n" +
+                    "BT name: " +  data.getString("getName");
 
+            mTextView.setText(display);
+            final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+            prefs.edit().putString("last_connected_device_address", data.getString("getAddress")).apply();
+            prefs.edit().putString("dex_collection_method", data.getString("collectionMethod")).apply();
+            prefs.edit().putString("dex_txid", data.getString("txid")).apply();
+            prefs.edit().putString("bt_name", data.getString("getName")).apply();
+            //set bluetooth device settings
+            initBTDevice();
 
-    private void initGoogleApiClient() {
-        mApiClient = new GoogleApiClient.Builder( this )
-                .addApi( Wearable.API )
-                .addConnectionCallbacks( this )
-                .build();
-
-        if( mApiClient != null && !( mApiClient.isConnected() || mApiClient.isConnecting() ) )
-            mApiClient.connect();
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-        if( mApiClient != null && !( mApiClient.isConnected() || mApiClient.isConnecting() ) )
-            mApiClient.connect();
-    }
-
-    @Override
-    protected void onStart() {
-        super.onStart();
-    }
-
-    @Override
-    public void onMessageReceived( final MessageEvent messageEvent ) {
-        runOnUiThread( new Runnable() {
-            @Override
-            public void run() {
-                if( messageEvent.getPath().equalsIgnoreCase( WEAR_MESSAGE_PATH ) ) {
-                    mAdapter.add(new String(messageEvent.getData()));
-                    mAdapter.notifyDataSetChanged();
-                }
-            }
-        });
-    }
-
-    @Override
-    public void onConnected(Bundle bundle) {
-        Wearable.MessageApi.addListener( mApiClient, this );
-    }
-
-    @Override
-    protected void onStop() {
-        if ( mApiClient != null ) {
-            Wearable.MessageApi.removeListener( mApiClient, this );
-            if ( mApiClient.isConnected() ) {
-                mApiClient.disconnect();
-            }
         }
-        super.onStop();
-    }
-
-    @Override
-    protected void onDestroy() {
-        if( mApiClient != null )
-            mApiClient.unregisterConnectionCallbacks( this );
-        super.onDestroy();
-    }
-
-    @Override
-    public void onConnectionSuspended(int i) {
-
     }
 }
 
