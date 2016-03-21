@@ -68,6 +68,9 @@ public class MainActivity extends AppCompatActivity implements
         //dataMap.putString("collectionMethod", collectionMethod);
         dataMap.putString("txid", "6BBKU");
         dataMap.putString("getName", "xbridge");
+        dataMap.putString("collectionMethod", configActivity.text);
+        Log.v("myTag", "collectionMethod: " + configActivity.text);
+
 
 
 

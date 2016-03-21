@@ -20,27 +20,25 @@ public class ConfigActivity extends Activity implements OnClickListener {
     EditText et;
     Button b;
     RadioGroup rbg;
-    RadioButton radioButton;
+    public String text;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         // TODO Auto-generated method stub
         super.onCreate(savedInstanceState);
         setContentView(R.layout.config);
         rbg = (RadioGroup) findViewById(R.id.selectcollectionmethod);
-        int selectedId = rbg.getCheckedRadioButtonId();
-        // find the radiobutton by returned id
-        radioButton = (RadioButton) findViewById(selectedId);
-
-        switch (selectedId) {
-            default:
-            case R.id.xdrip:
-                //prefs.edit().putString("dex_collection_method", "xdrip").apply();
-                break;
-            case R.id.xbridge:
-                //prefs.edit().putString("dex_collection_method", "DexbridgeWixel").apply();
-                break;
-        }
-
+        rbg.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
+            public void onCheckedChanged(RadioGroup rg, int checkedId) {
+                for(int i=0; i<rg.getChildCount(); i++) {
+                    RadioButton btn = (RadioButton) rg.getChildAt(i);
+                    if(btn.getId() == checkedId) {
+                        String text = btn.getText().toString();
+                        Log.v("myTag", "selectcollectionmethod: " + text);
+                        return;
+                    }
+                }
+            }
+        });
 
         cb = (CheckBox) findViewById(R.id.checkBox1);
         et = (EditText) findViewById(R.id.editText1);
@@ -53,7 +51,7 @@ public class ConfigActivity extends Activity implements OnClickListener {
         SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(this);
         boolean cbValue = sp.getBoolean("CHECKBOX", false);
         String name = sp.getString("NAME", "YourName");
-        int selectedid = sp.getInt("selectcollectionmethod",0);
+        int selectedid = sp.getInt("selectcollectionmethod", 0);
         if(cbValue){
             cb.setChecked(true);
         }else{
@@ -85,12 +83,11 @@ public class ConfigActivity extends Activity implements OnClickListener {
     }
     @Override
     public void onClick(View v) {
-        // TODO Auto-generated method stub
         savePrefs("CHECKBOX", cb.isChecked());
         savePrefs("NAME", et.getText().toString());
         savePrefs("selectcollectionmethod", rbg.getCheckedRadioButtonId());
         //savePrefs("selectcollectionmethodtxt", rbg.getText());
-        //Log.v("myTag", "selectcollectionmethodtxt: " + radioButton.getText());
+        //Log.v("myTag", "selectcollectionmethodtxt: " + radioButtontext);
         Log.v("myTag", "selectcollectionmethod: " + rbg.getCheckedRadioButtonId());
 
         finish();
