@@ -1,7 +1,9 @@
 package danaapswear.danaapswear;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.Menu;
@@ -23,20 +25,24 @@ import java.util.Date;
 public class MainActivity extends AppCompatActivity implements
         View.OnClickListener,
         GoogleApiClient.ConnectionCallbacks,
-        GoogleApiClient.OnConnectionFailedListener
-{
-        Button configbutton;
-        Button sendconfigButton;
+        GoogleApiClient.OnConnectionFailedListener {
+    Button configbutton;
+    Button readconfigButton;
+    Button sendconfigButton;
     GoogleApiClient googleClient;
-        ConfigActivity configActivity;
+
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        configbutton = (Button)findViewById(R.id.configButton);
+        configbutton = (Button) findViewById(R.id.configButton);
         configbutton.setOnClickListener(this);
-        sendconfigButton = (Button)findViewById(R.id.sendconfigButton);
+        sendconfigButton = (Button) findViewById(R.id.sendconfigButton);
         sendconfigButton.setOnClickListener(this);
+        readconfigButton = (Button) findViewById(R.id.readconfigButton);
+        readconfigButton.setOnClickListener(this);
         // Build a new GoogleApiClient for the the Wearable API
         googleClient = new GoogleApiClient.Builder(this)
                 .addApi(Wearable.API)
@@ -56,22 +62,22 @@ public class MainActivity extends AppCompatActivity implements
 
         String WEARABLE_DATA_PATH = "/wearable_data";
 
-        //String collectionMethod = PreferenceManager.getDefaultSharedPreferences(this).getString("selectcollectionmethodtxt", "");
-        //Log.v("myTag", "collectionMethod: " + ConfigActivity.radioButton.getText());
+        //read shared prefernces and put them into strings
+        SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(this);
+        String txid = sp.getString("txid", "");
+        String selectcollectionmethod = sp.getString("selectcollectionmethod", "");
+        String getAddress = sp.getString("btmac", "");
+        String calibration = sp.getString("calibration", "");
 
-        //Log.v("myTag", "collectionMethod: " + collectionMethod);
 
         // Create a DataMap object and send it to the data layer
         DataMap dataMap = new DataMap();
         dataMap.putLong("time", new Date().getTime());
-        dataMap.putString("getAddress", "B4:99:4C:67:5E:67");
-        //dataMap.putString("collectionMethod", collectionMethod);
-        dataMap.putString("txid", "6BBKU");
+        dataMap.putString("getAddress", getAddress);
+        dataMap.putString("txid", txid);
+        dataMap.putString("calibrationvalue", calibration);
         dataMap.putString("getName", "xbridge");
-        dataMap.putString("collectionMethod", configActivity.text);
-        Log.v("myTag", "collectionMethod: " + configActivity.text);
-
-
+        dataMap.putString("collectionMethod", selectcollectionmethod);
 
 
         //Requires a new thread to avoid blocking the UI
@@ -89,10 +95,12 @@ public class MainActivity extends AppCompatActivity implements
 
     // Placeholders for required connection callbacks
     @Override
-    public void onConnectionSuspended(int cause) { }
+    public void onConnectionSuspended(int cause) {
+    }
 
     @Override
-    public void onConnectionFailed(ConnectionResult connectionResult) { }
+    public void onConnectionFailed(ConnectionResult connectionResult) {
+    }
 
 
     @Override
@@ -123,10 +131,24 @@ public class MainActivity extends AppCompatActivity implements
 
     }
 
+    private void readconfigButtonClick() {
+
+        //read shared prefernces and put them into strings
+        SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(this);
+        String txid = sp.getString("txid", "");
+        String selectcollectionmethod = sp.getString("selectcollectionmethod", "");
+        String getAddress = sp.getString("btmac", "");
+        String calibration = sp.getString("calibration", "");
+        Log.v("myTag", "txid: " + txid);
+        Log.v("myTag", "selectcollectionmethod: " + selectcollectionmethod);
+        Log.v("myTag", "btmac: " + getAddress);
+        Log.v("myTag", "calibration: " + calibration);
+    }
+
+
 
     private void sendconfigButtonclick() {
         googleClient.connect();
-
     }
 
 
@@ -140,8 +162,12 @@ public class MainActivity extends AppCompatActivity implements
             case R.id.sendconfigButton:
                 sendconfigButtonclick();
                 break;
+            case R.id.readconfigButton:
+                readconfigButtonClick();
+                break;
         }
     }
+
 
 
 

@@ -18,6 +18,7 @@ import android.widget.TextView;
 import com.activeandroid.query.Select;
 import com.eveningoutpost.dexdrip.Models.ActiveBluetoothDevice;
 import com.eveningoutpost.dexdrip.Models.BgReading;
+import com.eveningoutpost.dexdrip.Models.Calibration;
 import com.eveningoutpost.dexdrip.Models.Sensor;
 import com.eveningoutpost.dexdrip.UtilityModels.CollectionServiceStarter;
 
@@ -57,14 +58,20 @@ public class MainActivity extends WearableActivity {
     public boolean dispatchTouchEvent(MotionEvent ev) {
         Log.d("debug", "dispatchTouchEvent");
         showBG();
-        sensorActivity();
         return  super.dispatchTouchEvent(ev);
     }
 
     public void showBG(){
         BgReading lastBgreading = BgReading.last();
-        Log.d("BGREADING", "BGReading:" +lastBgreading);
+        Log.d("BGREADING", "BGReading:" + lastBgreading);
 
+    }
+    public void addcalibration(){
+        String string_value =  PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).getString("calibrationvalue", "");
+
+        double calValue = Double.parseDouble(string_value);
+        //Calibration.initialCalibration(calValue_1, calValue_2, getApplicationContext());
+        Calibration calibration = Calibration.create(calValue, getApplicationContext());
     }
 
     public void sensorActivity(){
@@ -81,13 +88,13 @@ public class MainActivity extends WearableActivity {
             Log.d("Sensor", "Current Sensor started at " + Sensor.currentSensor());
             Calendar kalender = Calendar.getInstance();
 
-            kalender.set(Calendar.DATE, 22);
-            kalender.set(Calendar.MONTH, 2 - 1);
-            kalender.set(Calendar.YEAR, 2016);
-            kalender.set(Calendar.HOUR_OF_DAY, 13);
-            kalender.set(Calendar.MINUTE, 55);
-            kalender.set(Calendar.SECOND, 0);
-
+            //kalender.set(Calendar.DATE, 22);
+            //kalender.set(Calendar.MONTH, 2 - 1);
+            //kalender.set(Calendar.YEAR, 2016);
+            //kalender.set(Calendar.HOUR_OF_DAY, 13);
+            //kalender.set(Calendar.MINUTE, 55);
+            //kalender.set(Calendar.SECOND, 0);
+            kalender.set(22, 2-1, 2016, 13, 55, 0);
             long startTime = kalender.getTime().getTime();
             Sensor.create(startTime);
             Log.d("NEW SENSOR", "New Sensor started at " + startTime);
@@ -99,6 +106,7 @@ public class MainActivity extends WearableActivity {
     private void initBTDevice() {
         String getName =  PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).getString("getName", "");
         String getAddress =  PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).getString("last_connected_device_address", "00:00:00:00:00:00");
+        //b4:99:4c:67:5e:67
 
         ActiveBluetoothDevice btDevice = new Select().from(ActiveBluetoothDevice.class)
                 .orderBy("_ID desc")
@@ -115,7 +123,6 @@ public class MainActivity extends WearableActivity {
             btDevice.save();
         }
     }
-
     public class MessageReceiver extends BroadcastReceiver {
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -125,6 +132,7 @@ public class MainActivity extends WearableActivity {
                     "Bluetooth MAC" + data.getString("getAddress") + "\n" +
                     "collectionMethod: " + data.getString("collectionMethod") + "\n" +
                     "Transmitter ID: "+ data.getString("txid") + "\n" +
+                    "BG Calibration Value: "+ data.getString("calibrationvalue") + "\n" +
                     "BT name: " +  data.getString("getName");
 
             mTextView.setText(display);
@@ -133,9 +141,12 @@ public class MainActivity extends WearableActivity {
             prefs.edit().putString("dex_collection_method", data.getString("collectionMethod")).apply();
             prefs.edit().putString("dex_txid", data.getString("txid")).apply();
             prefs.edit().putString("bt_name", data.getString("getName")).apply();
+            prefs.edit().putString("calibrationvalue", data.getString("calibrationvalue")).apply();
+
             //set bluetooth device settings
             initBTDevice();
-
+            addcalibration();
+            sensorActivity();
         }
     }
 }
