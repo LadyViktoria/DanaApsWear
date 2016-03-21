@@ -1,0 +1,31 @@
+<LinearLayout
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    xmlns:android="http://schemas.android.com/apk/res/android">
+    <CheckBox android:id="@+id/checkBox1" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Display Name"/>
+    <TextView android:id="@+id/textView1" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Enter your name."/>
+    <EditText android:id="@+id/editText1" android:layout_width="match_parent" android:layout_height="wrap_content">
+        <requestFocus/>
+    </EditText>
+    <Button android:id="@+id/savebutton" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Save"/>
+
+    <RadioGroup
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/selectcollectionmethod">
+        <RadioButton
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="xdrip"
+            android:id="@+id/xdrip" />
+        <RadioButton
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="xbridge"
+            android:id="@+id/xbridge" />
+
+    </RadioGroup>
+
+
+</LinearLayout>

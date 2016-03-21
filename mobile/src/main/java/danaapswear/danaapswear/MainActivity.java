@@ -1,10 +1,13 @@
 package danaapswear.danaapswear;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.Button;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -18,16 +21,22 @@ import java.util.Date;
 
 
 public class MainActivity extends AppCompatActivity implements
+        View.OnClickListener,
         GoogleApiClient.ConnectionCallbacks,
-        GoogleApiClient.OnConnectionFailedListener{
-
+        GoogleApiClient.OnConnectionFailedListener
+{
+        Button configbutton;
+        Button sendconfigButton;
     GoogleApiClient googleClient;
-
+        ConfigActivity configActivity;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
+        configbutton = (Button)findViewById(R.id.configButton);
+        configbutton.setOnClickListener(this);
+        sendconfigButton = (Button)findViewById(R.id.sendconfigButton);
+        sendconfigButton.setOnClickListener(this);
         // Build a new GoogleApiClient for the the Wearable API
         googleClient = new GoogleApiClient.Builder(this)
                 .addApi(Wearable.API)
@@ -40,7 +49,6 @@ public class MainActivity extends AppCompatActivity implements
     @Override
     protected void onStart() {
         super.onStart();
-        googleClient.connect();
     }
 
     @Override
@@ -48,13 +56,19 @@ public class MainActivity extends AppCompatActivity implements
 
         String WEARABLE_DATA_PATH = "/wearable_data";
 
+        //String collectionMethod = PreferenceManager.getDefaultSharedPreferences(this).getString("selectcollectionmethodtxt", "");
+        //Log.v("myTag", "collectionMethod: " + ConfigActivity.radioButton.getText());
+
+        //Log.v("myTag", "collectionMethod: " + collectionMethod);
+
         // Create a DataMap object and send it to the data layer
         DataMap dataMap = new DataMap();
         dataMap.putLong("time", new Date().getTime());
         dataMap.putString("getAddress", "B4:99:4C:67:5E:67");
-        dataMap.putString("collectionMethod", "DexbridgeWixel");
+        //dataMap.putString("collectionMethod", collectionMethod);
         dataMap.putString("txid", "6BBKU");
         dataMap.putString("getName", "xbridge");
+
 
 
         //Requires a new thread to avoid blocking the UI
@@ -99,6 +113,34 @@ public class MainActivity extends AppCompatActivity implements
 
         return super.onOptionsItemSelected(item);
     }
+
+
+    private void configButtonClick() {
+        startActivity(new Intent("danaapswear.danaapswear.ConfigActivity"));
+
+    }
+
+
+    private void sendconfigButtonclick() {
+        googleClient.connect();
+
+    }
+
+
+    @Override
+    public void onClick(View v) {
+        switch (v.getId())
+        {
+            case R.id.configButton:
+                configButtonClick();
+                break;
+            case R.id.sendconfigButton:
+                sendconfigButtonclick();
+                break;
+        }
+    }
+
+
 
     class SendToDataLayerThread extends Thread {
         String path;
