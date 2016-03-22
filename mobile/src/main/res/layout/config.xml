@@ -28,27 +28,16 @@
         <RadioButton
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="xdrip"
+            android:text="BluetoothWixel"
             android:id="@+id/xdrip" />
         <RadioButton
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="xbridge"
+            android:text="DexbridgeWixel"
             android:id="@+id/xbridge" />
 
     </RadioGroup>
 
-    <TextView
-        android:id="@+id/textView2"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Enter Calibration." />
-
-    <EditText
-        android:id="@+id/calibration"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center_horizontal" />
 
     <TextView
         android:id="@+id/textView3"

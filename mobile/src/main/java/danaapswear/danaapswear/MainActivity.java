@@ -5,11 +5,13 @@ import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.v7.app.AppCompatActivity;
+import android.text.InputType;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -30,8 +32,9 @@ public class MainActivity extends AppCompatActivity implements
     Button readconfigButton;
     Button sendconfigButton;
     GoogleApiClient googleClient;
+    Button sendcalibrationButton;
 
-
+    EditText calibration;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -49,6 +52,11 @@ public class MainActivity extends AppCompatActivity implements
                 .addConnectionCallbacks(this)
                 .addOnConnectionFailedListener(this)
                 .build();
+        sendcalibrationButton = (Button) findViewById(R.id.readconfigButton);
+        sendcalibrationButton.setOnClickListener(this);
+        calibration = (EditText) findViewById(R.id.calibration);
+        calibration.setInputType(InputType.TYPE_CLASS_NUMBER);
+        loadPrefs();
     }
 
     // Connect to the data layer when the Activity starts
@@ -73,11 +81,11 @@ public class MainActivity extends AppCompatActivity implements
         // Create a DataMap object and send it to the data layer
         DataMap dataMap = new DataMap();
         dataMap.putLong("time", new Date().getTime());
-        dataMap.putString("getAddress", getAddress);
-        dataMap.putString("txid", txid);
-        dataMap.putString("calibrationvalue", calibration);
-        dataMap.putString("getName", "xbridge");
-        dataMap.putString("collectionMethod", selectcollectionmethod);
+        dataMap.putString("mobile_getAddress", getAddress);
+        dataMap.putString("mobile_txid", txid);
+        dataMap.putString("mobile_calibrationvalue", calibration);
+        dataMap.putString("mobile_getName", "xbridge");
+        dataMap.putString("mobile_collectionMethod", selectcollectionmethod);
 
 
         //Requires a new thread to avoid blocking the UI
@@ -145,12 +153,31 @@ public class MainActivity extends AppCompatActivity implements
         Log.v("myTag", "calibration: " + calibration);
     }
 
+    private void savePrefs(String key, String value) {
+        SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(this);
+        SharedPreferences.Editor edit = sp.edit();
+        edit.putString(key, value);
+        edit.commit();
+    }
+
+
+    private void loadPrefs() {
+        SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(this);
+        String bgcalibration = sp.getString("calibration", "enter Calibration");
+        calibration.setText(bgcalibration);
+    }
 
 
     private void sendconfigButtonclick() {
         googleClient.connect();
     }
 
+    private void sendcalibrationButtonclick(){
+        savePrefs("calibration", calibration.getText().toString());
+        Log.v("saved string: ", calibration.getText().toString());
+
+        finish();
+    }
 
     @Override
     public void onClick(View v) {
@@ -164,6 +191,11 @@ public class MainActivity extends AppCompatActivity implements
                 break;
             case R.id.readconfigButton:
                 readconfigButtonClick();
+                break;
+            case R.id.sendcalibrationButton:
+                sendcalibrationButtonclick();
+                savePrefs("calibration", calibration.getText().toString());
+
                 break;
         }
     }

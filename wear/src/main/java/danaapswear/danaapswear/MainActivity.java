@@ -16,6 +16,7 @@ import android.view.MotionEvent;
 import android.widget.TextView;
 
 import com.activeandroid.query.Select;
+import com.eveningoutpost.dexdrip.ImportedLibraries.dexcom.SyncingService;
 import com.eveningoutpost.dexdrip.Models.ActiveBluetoothDevice;
 import com.eveningoutpost.dexdrip.Models.BgReading;
 import com.eveningoutpost.dexdrip.Models.Calibration;
@@ -37,10 +38,10 @@ public class MainActivity extends WearableActivity {
             @Override
             public void onLayoutInflated(WatchViewStub stub) {
                 mTextView = (TextView) stub.findViewById(R.id.text);
+
             }
         });
 
-        setAmbientEnabled();
 
         // Register the local broadcast receiver
         IntentFilter messageFilter = new IntentFilter(Intent.ACTION_SEND);
@@ -48,15 +49,17 @@ public class MainActivity extends WearableActivity {
         LocalBroadcastManager.getInstance(this).registerReceiver(messageReceiver, messageFilter);
 
         //start collectionservice
-        Context context = getApplicationContext();
-        CollectionServiceStarter collectionServiceStarter = new CollectionServiceStarter(context);
-        collectionServiceStarter.start(getApplicationContext());
+        //Context context = getApplicationContext();
+        //CollectionServiceStarter collectionServiceStarter = new CollectionServiceStarter(context);
+        //collectionServiceStarter.start(getApplicationContext());
+
+
     }
 
     // listen for touch activity
     @Override
     public boolean dispatchTouchEvent(MotionEvent ev) {
-        Log.d("debug", "dispatchTouchEvent");
+        //Log.d("debug", "dispatchTouchEvent");
         showBG();
         return  super.dispatchTouchEvent(ev);
     }
@@ -67,11 +70,13 @@ public class MainActivity extends WearableActivity {
 
     }
     public void addcalibration(){
-        String string_value =  PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).getString("calibrationvalue", "");
+        String string_value =  PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).getString("wear_calibrationvalue", "");
 
         double calValue = Double.parseDouble(string_value);
         //Calibration.initialCalibration(calValue_1, calValue_2, getApplicationContext());
         Calibration calibration = Calibration.create(calValue, getApplicationContext());
+        Log.d("NEW CALIBRATION", "Calibration value: " + calValue);
+        callibrationCheckin();
     }
 
     public void sensorActivity(){
@@ -102,11 +107,22 @@ public class MainActivity extends WearableActivity {
         }
     }
 
-
+private void callibrationCheckin(){
+    if (Sensor.isActive()) {
+        SyncingService.startActionCalibrationCheckin(getApplicationContext());
+        Log.d("CALIBRATION", "Checked in all calibrations");
+        finish();
+    } else {
+        Log.d("CALIBRATION", "ERROR, sensor not active");
+    }
+}
     private void initBTDevice() {
-        String getName =  PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).getString("getName", "");
-        String getAddress =  PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).getString("last_connected_device_address", "00:00:00:00:00:00");
+        String getName =  PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).getString("wear_getName", "");
+        String getAddress =  PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).getString("wear_getAddress", "00:00:00:00:00:00");
         //b4:99:4c:67:5e:67
+        Log.d("BLUETOOTH Name", "getName: " + getName);
+        Log.d("BLUETOOTH ADRESS", "getAddress: " + getAddress);
+
 
         ActiveBluetoothDevice btDevice = new Select().from(ActiveBluetoothDevice.class)
                 .orderBy("_ID desc")
@@ -122,6 +138,12 @@ public class MainActivity extends WearableActivity {
             btDevice.address = getAddress;
             btDevice.save();
         }
+
+
+        Context context = getApplicationContext();
+        CollectionServiceStarter restartCollectionService = new CollectionServiceStarter(context);
+        restartCollectionService.restartCollectionService(getApplicationContext());
+
     }
     public class MessageReceiver extends BroadcastReceiver {
         @Override
@@ -129,24 +151,27 @@ public class MainActivity extends WearableActivity {
             Bundle data = intent.getBundleExtra("datamap");
             // Display rceiveed data in UI
             String display = "Received from the data Layer\n" +
-                    "Bluetooth MAC" + data.getString("getAddress") + "\n" +
-                    "collectionMethod: " + data.getString("collectionMethod") + "\n" +
-                    "Transmitter ID: "+ data.getString("txid") + "\n" +
-                    "BG Calibration Value: "+ data.getString("calibrationvalue") + "\n" +
-                    "BT name: " +  data.getString("getName");
+                    "Bluetooth MAC" + data.getString("mobile_getAddress") + "\n" +
+                    "collectionMethod: " + data.getString("mobile_collectionMethod") + "\n" +
+                    "Transmitter ID: "+ data.getString("mobile_txid") + "\n" +
+                    "BG Calibration Value: "+ data.getString("mobile_calibrationvalue") + "\n" +
+                    "BT name: " +  data.getString("mobile_getName");
 
             mTextView.setText(display);
             final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
-            prefs.edit().putString("last_connected_device_address", data.getString("getAddress")).apply();
-            prefs.edit().putString("dex_collection_method", data.getString("collectionMethod")).apply();
-            prefs.edit().putString("dex_txid", data.getString("txid")).apply();
-            prefs.edit().putString("bt_name", data.getString("getName")).apply();
-            prefs.edit().putString("calibrationvalue", data.getString("calibrationvalue")).apply();
+            prefs.edit().putString("wear_getAddress", data.getString("mobile_getAddress")).apply();
+            prefs.edit().putString("wear_collection_method", data.getString("mobile_collectionMethod")).apply();
+            prefs.edit().putString("wear_txid", data.getString("mobile_txid")).apply();
+            prefs.edit().putString("wear_getName", data.getString("mobile_getName")).apply();
+            prefs.edit().putString("wear_calibrationvalue", data.getString("mobile_calibrationvalue")).apply();
+            prefs.edit().putString("dex_collection_method", data.getString("mobile_collectionMethod")).apply();
+
 
             //set bluetooth device settings
-            initBTDevice();
+
             addcalibration();
             sensorActivity();
+            initBTDevice();
         }
     }
 }
