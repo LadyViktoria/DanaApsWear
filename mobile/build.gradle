@@ -18,7 +18,11 @@ android {
         }
     }
 }
-
+repositories{
+    maven {
+        url "https://jitpack.io"
+    }
+}
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
     wearApp project(':wear')
@@ -26,4 +30,5 @@ dependencies {
     compile 'com.android.support:appcompat-v7:23.2.1'
     compile 'com.google.android.gms:play-services:8.4.0'
     compile 'com.android.support:design:23.2.1'
+    compile 'com.github.jaydeep17:datetimepicker:0.0.4'
 }

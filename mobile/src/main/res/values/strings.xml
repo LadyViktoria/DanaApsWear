@@ -4,5 +4,7 @@
     <string name="app_name">DanaApsWear</string>
     <string name="hello_world">Hello world!</string>
     <string name="action_settings">Settings</string>
+    <string name="sensorstart">Sensor start</string>
+
 
 </resources>

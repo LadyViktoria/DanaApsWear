@@ -52,7 +52,7 @@ public class MainActivity extends AppCompatActivity implements
                 .addConnectionCallbacks(this)
                 .addOnConnectionFailedListener(this)
                 .build();
-        sendcalibrationButton = (Button) findViewById(R.id.readconfigButton);
+        sendcalibrationButton = (Button) findViewById(R.id.sendcalibrationButton);
         sendcalibrationButton.setOnClickListener(this);
         calibration = (EditText) findViewById(R.id.calibration);
         calibration.setInputType(InputType.TYPE_CLASS_NUMBER);
@@ -76,6 +76,8 @@ public class MainActivity extends AppCompatActivity implements
         String selectcollectionmethod = sp.getString("selectcollectionmethod", "");
         String getAddress = sp.getString("btmac", "");
         String calibration = sp.getString("calibration", "");
+        String sensorstartsting = sp.getString("sensorstart", "Your Sensor Started at:");
+
 
 
         // Create a DataMap object and send it to the data layer
@@ -86,6 +88,8 @@ public class MainActivity extends AppCompatActivity implements
         dataMap.putString("mobile_calibrationvalue", calibration);
         dataMap.putString("mobile_getName", "xbridge");
         dataMap.putString("mobile_collectionMethod", selectcollectionmethod);
+        dataMap.putString("mobile_sensorstartsting", sensorstartsting);
+
 
 
         //Requires a new thread to avoid blocking the UI
@@ -135,7 +139,7 @@ public class MainActivity extends AppCompatActivity implements
 
 
     private void configButtonClick() {
-        startActivity(new Intent("danaapswear.danaapswear.ConfigActivity"));
+        startActivity(new Intent(".ConfigActivity"));
 
     }
 
@@ -147,6 +151,8 @@ public class MainActivity extends AppCompatActivity implements
         String selectcollectionmethod = sp.getString("selectcollectionmethod", "");
         String getAddress = sp.getString("btmac", "");
         String calibration = sp.getString("calibration", "");
+        String sensorstartsting = sp.getString("sensorstart", "Your Sensor Started at:");
+        Log.v("myTag", "sensor started at: " + sensorstartsting);
         Log.v("myTag", "txid: " + txid);
         Log.v("myTag", "selectcollectionmethod: " + selectcollectionmethod);
         Log.v("myTag", "btmac: " + getAddress);
@@ -172,12 +178,24 @@ public class MainActivity extends AppCompatActivity implements
         googleClient.connect();
     }
 
-    private void sendcalibrationButtonclick(){
+    public void sendcalibrationButtonclick(){
         savePrefs("calibration", calibration.getText().toString());
-        Log.v("saved string: ", calibration.getText().toString());
+        String WEARABLE_DATA_PATH = "/wearable_data";
+        //read shared prefernces and put them into strings
+        SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(this);
+        String calibration = sp.getString("calibration", "");
+        // Create a DataMap object and send it to the data layer
+        DataMap dataMap = new DataMap();
+        dataMap.putString("mobile_calibrationvalue", calibration);
+        //Requires a new thread to avoid blocking the UI
+        new SendToDataLayerThread(WEARABLE_DATA_PATH, dataMap).start();
+        Log.v("myTag", "send DataMap to data layer");
 
-        finish();
     }
+
+
+
+
 
     @Override
     public void onClick(View v) {
@@ -194,8 +212,6 @@ public class MainActivity extends AppCompatActivity implements
                 break;
             case R.id.sendcalibrationButton:
                 sendcalibrationButtonclick();
-                savePrefs("calibration", calibration.getText().toString());
-
                 break;
         }
     }

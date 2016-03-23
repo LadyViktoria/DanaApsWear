@@ -32,24 +32,66 @@
         android:id="@+id/textView2"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Enter Calibration."
+        android:textAppearance="?android:attr/textAppearanceLarge"
+        android:text="Enter Calibration:"
         android:layout_below="@+id/readconfigButton"
-        android:layout_alignParentStart="true"
-        android:layout_marginTop="74dp" />
+        android:layout_alignParentStart="true"/>
 
     <EditText
         android:id="@+id/calibration"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_gravity="center_horizontal"
         android:layout_below="@+id/textView2"
         android:layout_alignParentStart="true"
-        android:layout_alignEnd="@+id/readconfigButton" />
+        android:layout_alignEnd="@+id/slope" />
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Send Calibration"
         android:id="@+id/sendcalibrationButton"
         android:layout_alignBottom="@+id/calibration"
-        android:layout_alignStart="@+id/sendconfigButton" />
+        android:layout_alignEnd="@+id/sendconfigButton" />
+
+    <EditText
+        android:id="@+id/slope"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/calibration"
+        android:layout_alignParentStart="true"
+        android:layout_alignEnd="@+id/textView2" />
+
+    <EditText
+        android:id="@+id/intercept"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/textView5"
+        android:layout_alignParentStart="true"
+        android:layout_alignEnd="@+id/slope" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceLarge"
+        android:text="Slope"
+        android:id="@+id/textView5"
+        android:layout_below="@+id/slope"
+        android:layout_alignParentStart="true" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceLarge"
+        android:text="Intercept"
+        android:id="@+id/textView6"
+        android:layout_below="@+id/intercept"
+        android:layout_alignParentStart="true" />
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Send Slope &amp; Intercept"
+        android:id="@+id/sendslopeintercept"
+        android:layout_alignBottom="@+id/textView6"
+        android:layout_alignStart="@+id/sendcalibrationButton" />
+
 </RelativeLayout>

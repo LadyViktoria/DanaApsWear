@@ -2,24 +2,28 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    xmlns:android="http://schemas.android.com/apk/res/android">
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:weightSum="1">
     <TextView
         android:id="@+id/textView1"
+        android:textAppearance="?android:attr/textAppearanceLarge"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Enter your Transmitter ID."/>
+        android:text="Enter your Transmitter ID:"/>
+
     <EditText
         android:id="@+id/txid"
-        android:layout_width="match_parent"
+        android:layout_width="95dp"
         android:layout_height="wrap_content">
         <requestFocus/>
     </EditText>
 
     <TextView
         android:id="@+id/textView"
+        android:textAppearance="?android:attr/textAppearanceLarge"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Select Collection Method." />
+        android:text="Select Collection Method:" />
 
     <RadioGroup
         android:layout_width="wrap_content"
@@ -35,27 +39,51 @@
             android:layout_height="wrap_content"
             android:text="DexbridgeWixel"
             android:id="@+id/xbridge" />
-
     </RadioGroup>
-
 
     <TextView
         android:id="@+id/textView3"
+        android:textAppearance="?android:attr/textAppearanceLarge"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Enter Bluettoth Mac Address." />
+        android:text="Enter Bluettoth Mac Address:" />
 
     <EditText
         android:id="@+id/btmac"
+        android:layout_width="184dp"
+        android:layout_height="wrap_content" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceLarge"
+        android:text="Sensor Started at:"
+        android:id="@+id/textView4" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceLarge"
+        android:text="Sensor Start"
+        android:id="@+id/sensorstart" />
+
+    <Button
+        android:id="@+id/sensorbutton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Select Sensor Start"/>
+
+    <Space
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_gravity="center_horizontal" />
+        android:layout_weight="0.50" />
 
     <Button
         android:id="@+id/savebutton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Save"/>
+        android:text="Save"
+        android:layout_gravity="center_horizontal" />
 
 
 </LinearLayout>

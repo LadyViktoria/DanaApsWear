@@ -85,6 +85,9 @@ public class MainActivity extends WearableActivity {
         if (Sensor.isActive()) {
             Log.d("Sensor", "sensor is active:" + Sensor.isActive());
             Log.d("Sensor", "Current Sensor started at " + Sensor.currentSensor());
+            String sensorstartsting =  PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).getString("mobile_sensorstartsting", "");
+            Log.d("NEW SENSOR", "New Sensor started at " + sensorstartsting);
+
 
 
         }
@@ -92,6 +95,10 @@ public class MainActivity extends WearableActivity {
             Log.d("Sensor", "sensor is not active:" + Sensor.isActive());
             Log.d("Sensor", "Current Sensor started at " + Sensor.currentSensor());
             Calendar kalender = Calendar.getInstance();
+
+            String sensorstartsting =  PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).getString("mobile_sensorstartsting", "");
+            Log.d("NEW SENSOR", "New Sensor started at " + sensorstartsting);
+
 
             //kalender.set(Calendar.DATE, 22);
             //kalender.set(Calendar.MONTH, 2 - 1);
@@ -155,6 +162,7 @@ private void callibrationCheckin(){
                     "collectionMethod: " + data.getString("mobile_collectionMethod") + "\n" +
                     "Transmitter ID: "+ data.getString("mobile_txid") + "\n" +
                     "BG Calibration Value: "+ data.getString("mobile_calibrationvalue") + "\n" +
+                    "Sensor started at: "+ data.getString("mobile_sensorstartsting") + "\n" +
                     "BT name: " +  data.getString("mobile_getName");
 
             mTextView.setText(display);
@@ -165,6 +173,8 @@ private void callibrationCheckin(){
             prefs.edit().putString("wear_getName", data.getString("mobile_getName")).apply();
             prefs.edit().putString("wear_calibrationvalue", data.getString("mobile_calibrationvalue")).apply();
             prefs.edit().putString("dex_collection_method", data.getString("mobile_collectionMethod")).apply();
+            prefs.edit().putString("wear_sensorstartsting", data.getString("mobile_sensorstartsting")).apply();
+
 
 
             //set bluetooth device settings
