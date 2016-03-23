@@ -10,8 +10,10 @@ import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.wearable.activity.WearableActivity;
+import android.support.wearable.view.WatchViewStub;
 import android.util.Log;
 import android.view.MotionEvent;
+import android.widget.TextView;
 
 import com.activeandroid.query.Select;
 import com.eveningoutpost.dexdrip.ImportedLibraries.dexcom.SyncingService;
@@ -28,10 +30,22 @@ public class MainActivity extends WearableActivity {
     int year, month ,day ,hour ,minute;
     String txid, selectcollectionmethod, getAddress, calibration, getName;
     Boolean stopsensor , startbt, calibrationcheckin;
+    private TextView mTextView;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+        final WatchViewStub stub = (WatchViewStub) findViewById(R.id.watch_view_stub);
+        stub.setOnLayoutInflatedListener(new WatchViewStub.OnLayoutInflatedListener() {
+            @Override
+            public void onLayoutInflated(WatchViewStub stub) {
+                mTextView = (TextView) stub.findViewById(R.id.text);
+
+            }
+        });
+
         // Register the local broadcast receiver
         IntentFilter messageFilter = new IntentFilter(Intent.ACTION_SEND);
         MessageReceiver messageReceiver = new MessageReceiver();
@@ -48,7 +62,8 @@ public class MainActivity extends WearableActivity {
         txid = sp.getString("dex_txid", "");
         selectcollectionmethod = sp.getString("selectcollectionmethod", "");
         getAddress = sp.getString("getAddress", "00:00:00:00:00:00");
-        getName = sp.getString("getName", "");
+        getName =
+                sp.getString("getName", "");
         year = sp.getInt("year", 0);
         month = sp.getInt("month", 0);
         day = sp.getInt("day", 0);
@@ -67,9 +82,10 @@ public class MainActivity extends WearableActivity {
 
     public void showBG(){
         BgReading lastBgreading = BgReading.last();
-        Log.d("BGREADING", "BGReading:" + lastBgreading);
-
+        String display = "Received :" + lastBgreading.toString();
+        mTextView.setText(display);
     }
+
     public void addcalibration(){
         loadPrefs();
         if (calibrationcheckin == true) {
