@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <color name="datepicker_primary">#ff4CAF50</color>
-    <color name="datepicker_primary_dark">#ff388E3C</color>
+    <color name="datepicker_primary">#fe13a0</color>
+    <color name="datepicker_primary_dark">#f21198</color>
 </resources>

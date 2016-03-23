@@ -1,5 +1,7 @@
 package danaapswear.danaapswear;
 
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
@@ -21,20 +23,20 @@ import com.google.android.gms.wearable.PutDataMapRequest;
 import com.google.android.gms.wearable.PutDataRequest;
 import com.google.android.gms.wearable.Wearable;
 
-import java.util.Date;
 
 
 public class MainActivity extends AppCompatActivity implements
         View.OnClickListener,
         GoogleApiClient.ConnectionCallbacks,
         GoogleApiClient.OnConnectionFailedListener {
-    Button configbutton;
-    Button readconfigButton;
-    Button sendconfigButton;
     GoogleApiClient googleClient;
-    Button sendcalibrationButton;
+    Button configbutton, sendconfigButton, sendcalibrationButton;
+    EditText editcalibration, editintercept, editslope;
 
-    EditText calibration;
+    int year, month ,day ,hour ,minute;
+    String txid, selectcollectionmethod, getAddress, calibration;
+    Boolean stopsensor;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -44,8 +46,7 @@ public class MainActivity extends AppCompatActivity implements
         configbutton.setOnClickListener(this);
         sendconfigButton = (Button) findViewById(R.id.sendconfigButton);
         sendconfigButton.setOnClickListener(this);
-        readconfigButton = (Button) findViewById(R.id.readconfigButton);
-        readconfigButton.setOnClickListener(this);
+
         // Build a new GoogleApiClient for the the Wearable API
         googleClient = new GoogleApiClient.Builder(this)
                 .addApi(Wearable.API)
@@ -54,8 +55,12 @@ public class MainActivity extends AppCompatActivity implements
                 .build();
         sendcalibrationButton = (Button) findViewById(R.id.sendcalibrationButton);
         sendcalibrationButton.setOnClickListener(this);
-        calibration = (EditText) findViewById(R.id.calibration);
-        calibration.setInputType(InputType.TYPE_CLASS_NUMBER);
+        editcalibration = (EditText) findViewById(R.id.calibration);
+        editcalibration.setInputType(InputType.TYPE_CLASS_NUMBER);
+        editslope = (EditText) findViewById(R.id.slope);
+        editslope.setInputType(InputType.TYPE_CLASS_NUMBER);
+        editintercept = (EditText) findViewById(R.id.intercept);
+        editintercept.setInputType(InputType.TYPE_CLASS_NUMBER);
         loadPrefs();
     }
 
@@ -67,31 +72,21 @@ public class MainActivity extends AppCompatActivity implements
 
     @Override
     public void onConnected(Bundle connectionHint) {
-
         String WEARABLE_DATA_PATH = "/wearable_data";
-
         //read shared prefernces and put them into strings
-        SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(this);
-        String txid = sp.getString("txid", "");
-        String selectcollectionmethod = sp.getString("selectcollectionmethod", "");
-        String getAddress = sp.getString("btmac", "");
-        String calibration = sp.getString("calibration", "");
-        String sensorstartsting = sp.getString("sensorstart", "Your Sensor Started at:");
-
-
-
+        loadPrefs();
         // Create a DataMap object and send it to the data layer
         DataMap dataMap = new DataMap();
-        dataMap.putLong("time", new Date().getTime());
-        dataMap.putString("mobile_getAddress", getAddress);
-        dataMap.putString("mobile_txid", txid);
-        dataMap.putString("mobile_calibrationvalue", calibration);
-        dataMap.putString("mobile_getName", "xbridge");
-        dataMap.putString("mobile_collectionMethod", selectcollectionmethod);
-        dataMap.putString("mobile_sensorstartsting", sensorstartsting);
-
-
-
+        dataMap.putString("getAddress", getAddress);
+        dataMap.putString("txid", txid);
+        dataMap.putString("getName", "xbridge");
+        dataMap.putString("collectionmethod", selectcollectionmethod);
+        dataMap.putInt("year", year);
+        dataMap.putInt("month", month);
+        dataMap.putInt("day", day);
+        dataMap.putInt("hour", hour);
+        dataMap.putInt("minute", minute);
+        dataMap.putBoolean("stopsensor", stopsensor);
         //Requires a new thread to avoid blocking the UI
         new SendToDataLayerThread(WEARABLE_DATA_PATH, dataMap).start();
     }
@@ -143,59 +138,81 @@ public class MainActivity extends AppCompatActivity implements
 
     }
 
-    private void readconfigButtonClick() {
-
-        //read shared prefernces and put them into strings
-        SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(this);
-        String txid = sp.getString("txid", "");
-        String selectcollectionmethod = sp.getString("selectcollectionmethod", "");
-        String getAddress = sp.getString("btmac", "");
-        String calibration = sp.getString("calibration", "");
-        String sensorstartsting = sp.getString("sensorstart", "Your Sensor Started at:");
-        Log.v("myTag", "sensor started at: " + sensorstartsting);
-        Log.v("myTag", "txid: " + txid);
-        Log.v("myTag", "selectcollectionmethod: " + selectcollectionmethod);
-        Log.v("myTag", "btmac: " + getAddress);
-        Log.v("myTag", "calibration: " + calibration);
-    }
-
     private void savePrefs(String key, String value) {
         SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(this);
         SharedPreferences.Editor edit = sp.edit();
         edit.putString(key, value);
         edit.commit();
     }
-
+    private void savePrefs(String key, boolean value) {
+        SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(this);
+        SharedPreferences.Editor edit = sp.edit();
+        edit.putBoolean(key, value);
+        edit.commit();
+    }
 
     private void loadPrefs() {
         SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(this);
-        String bgcalibration = sp.getString("calibration", "enter Calibration");
-        calibration.setText(bgcalibration);
+
+        //read shared prefs
+        calibration = sp.getString("calibration", "");
+        txid = sp.getString("txid", "");
+        selectcollectionmethod = sp.getString("selectcollectionmethod", "");
+        getAddress = sp.getString("btmac", "");
+        year = sp.getInt("intyear", 0);
+        month = sp.getInt("intmonth", 0);
+        day = sp.getInt("intday", 0);
+        hour = sp.getInt("inthour", 0);
+        minute = sp.getInt("intminute", 0);
+        stopsensor = sp.getBoolean("stopsensor", false);
+        //set dome things for mainactivity
+        editcalibration.setText(calibration);
     }
 
 
     private void sendconfigButtonclick() {
-        googleClient.connect();
+        loadPrefs();
+        new AlertDialog.Builder(this)
+                .setTitle("saved config:")
+                .setMessage(
+                        "txid: " + txid + "\n"
+                                + "selectcollectionmethod: " + selectcollectionmethod + "\n"
+                                + "getAddress: " + getAddress + "\n"
+                                + "intyear: " + year + "\n"
+                                + "intmonth: " + month + "\n"
+                                + "intday: " + day + "\n"
+                                + "inthour: " + hour + "\n"
+                                + "intminute: " + minute + "\n"
+                                + "stopsensor: " + stopsensor
+                )
+                .setPositiveButton("Send to Wear", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+                        googleClient.connect();
+                    }
+
+                })
+                .setNegativeButton("cancel", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+                    }
+                })
+                .show();
     }
 
     public void sendcalibrationButtonclick(){
-        savePrefs("calibration", calibration.getText().toString());
+        savePrefs("calibration", editcalibration.getText().toString());
         String WEARABLE_DATA_PATH = "/wearable_data";
         //read shared prefernces and put them into strings
         SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(this);
         String calibration = sp.getString("calibration", "");
         // Create a DataMap object and send it to the data layer
         DataMap dataMap = new DataMap();
-        dataMap.putString("mobile_calibrationvalue", calibration);
+        dataMap.putBoolean("calibrationcheckin", true);
+        dataMap.putString("calibration", calibration);
         //Requires a new thread to avoid blocking the UI
         new SendToDataLayerThread(WEARABLE_DATA_PATH, dataMap).start();
         Log.v("myTag", "send DataMap to data layer");
 
     }
-
-
-
-
 
     @Override
     public void onClick(View v) {
@@ -206,9 +223,6 @@ public class MainActivity extends AppCompatActivity implements
                 break;
             case R.id.sendconfigButton:
                 sendconfigButtonclick();
-                break;
-            case R.id.readconfigButton:
-                readconfigButtonClick();
                 break;
             case R.id.sendcalibrationButton:
                 sendcalibrationButtonclick();
