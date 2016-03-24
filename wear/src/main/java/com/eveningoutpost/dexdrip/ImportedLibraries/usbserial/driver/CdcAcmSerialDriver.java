@@ -44,8 +44,8 @@ import java.util.Map;
  *
  * @author mike wakerly (opensource@hoho.com)
  * @see <a
- *      href="http://www.usb.org/developers/devclass_docs/usbcdc11.pdf">Universal
- *      Serial Bus Class Definitions for Communication Devices, v1.1</a>
+ * href="http://www.usb.org/developers/devclass_docs/usbcdc11.pdf">Universal
+ * Serial Bus Class Definitions for Communication Devices, v1.1</a>
  */
 public class CdcAcmSerialDriver implements UsbSerialDriver {
 
@@ -57,6 +57,35 @@ public class CdcAcmSerialDriver implements UsbSerialDriver {
     public CdcAcmSerialDriver(UsbDevice device) {
         mDevice = device;
         mPort = new CdcAcmSerialPort(device, 0);
+    }
+
+    public static Map<Integer, int[]> getSupportedDevices() {
+        final Map<Integer, int[]> supportedDevices = new LinkedHashMap<Integer, int[]>();
+        supportedDevices.put(Integer.valueOf(UsbId.VENDOR_ARDUINO),
+                new int[]{
+                        UsbId.ARDUINO_UNO,
+                        UsbId.ARDUINO_UNO_R3,
+                        UsbId.ARDUINO_MEGA_2560,
+                        UsbId.ARDUINO_MEGA_2560_R3,
+                        UsbId.ARDUINO_SERIAL_ADAPTER,
+                        UsbId.ARDUINO_SERIAL_ADAPTER_R3,
+                        UsbId.ARDUINO_MEGA_ADK,
+                        UsbId.ARDUINO_MEGA_ADK_R3,
+                        UsbId.ARDUINO_LEONARDO,
+                });
+        supportedDevices.put(Integer.valueOf(UsbId.VENDOR_VAN_OOIJEN_TECH),
+                new int[]{
+                        UsbId.VAN_OOIJEN_TECH_TEENSYDUINO_SERIAL,
+                });
+        supportedDevices.put(Integer.valueOf(UsbId.VENDOR_ATMEL),
+                new int[]{
+                        UsbId.ATMEL_LUFA_CDC_DEMO_APP,
+                });
+        supportedDevices.put(Integer.valueOf(UsbId.VENDOR_LEAFLABS),
+                new int[]{
+                        UsbId.LEAFLABS_MAPLE,
+                });
+        return supportedDevices;
     }
 
     @Override
@@ -71,24 +100,20 @@ public class CdcAcmSerialDriver implements UsbSerialDriver {
 
     class CdcAcmSerialPort extends CommonUsbSerialPort {
 
-        private final boolean mEnableAsyncReads;
-        private UsbInterface mControlInterface;
-        private UsbInterface mDataInterface;
-
-        private UsbEndpoint mControlEndpoint;
-        private UsbEndpoint mReadEndpoint;
-        private UsbEndpoint mWriteEndpoint;
-
-        private boolean mRts = false;
-        private boolean mDtr = false;
-
         private static final int USB_RECIP_INTERFACE = 0x01;
         private static final int USB_RT_ACM = UsbConstants.USB_TYPE_CLASS | USB_RECIP_INTERFACE;
-
         private static final int SET_LINE_CODING = 0x20;  // USB CDC 1.1 section 6.2
         private static final int GET_LINE_CODING = 0x21;
         private static final int SET_CONTROL_LINE_STATE = 0x22;
         private static final int SEND_BREAK = 0x23;
+        private final boolean mEnableAsyncReads;
+        private UsbInterface mControlInterface;
+        private UsbInterface mDataInterface;
+        private UsbEndpoint mControlEndpoint;
+        private UsbEndpoint mReadEndpoint;
+        private UsbEndpoint mWriteEndpoint;
+        private boolean mRts = false;
+        private boolean mDtr = false;
 
         public CdcAcmSerialPort(UsbDevice device, int portNumber) {
             super(device, portNumber);
@@ -133,9 +158,9 @@ public class CdcAcmSerialDriver implements UsbSerialDriver {
                 mWriteEndpoint = mDataInterface.getEndpoint(0);
                 Log.d(TAG, "Write endpoint direction: " + mWriteEndpoint.getDirection());
                 if (mEnableAsyncReads) {
-                  Log.d(TAG, "Async reads enabled");
+                    Log.d(TAG, "Async reads enabled");
                 } else {
-                  Log.d(TAG, "Async reads disabled.");
+                    Log.d(TAG, "Async reads disabled.");
                 }
                 opened = true;
             } finally {
@@ -160,34 +185,36 @@ public class CdcAcmSerialDriver implements UsbSerialDriver {
         }
 
         @Override
-        public int read(byte[] dest, int timeoutMillis, UsbDeviceConnection connection) throws IOException {return 0;}
+        public int read(byte[] dest, int timeoutMillis, UsbDeviceConnection connection) throws IOException {
+            return 0;
+        }
 
         @Override
         public int read(byte[] dest, int timeoutMillis) throws IOException {
             if (mEnableAsyncReads) {
-              final UsbRequest request = new UsbRequest();
-              try {
-                request.initialize(mConnection, mReadEndpoint);
-                final ByteBuffer buf = ByteBuffer.wrap(dest);
-                if (!request.queue(buf, dest.length)) {
-                  throw new IOException("Error queueing request.");
-                }
+                final UsbRequest request = new UsbRequest();
+                try {
+                    request.initialize(mConnection, mReadEndpoint);
+                    final ByteBuffer buf = ByteBuffer.wrap(dest);
+                    if (!request.queue(buf, dest.length)) {
+                        throw new IOException("Error queueing request.");
+                    }
 
-                final UsbRequest response = mConnection.requestWait();
-                if (response == null) {
-                  throw new IOException("Null response");
-                }
+                    final UsbRequest response = mConnection.requestWait();
+                    if (response == null) {
+                        throw new IOException("Null response");
+                    }
 
-                final int nread = buf.position();
-                if (nread > 0) {
-                  //Log.d(TAG, HexDump.dumpHexString(dest, 0, Math.min(32, dest.length)));
-                  return nread;
-                } else {
-                  return 0;
+                    final int nread = buf.position();
+                    if (nread > 0) {
+                        //Log.d(TAG, HexDump.dumpHexString(dest, 0, Math.min(32, dest.length)));
+                        return nread;
+                    } else {
+                        return 0;
+                    }
+                } finally {
+                    request.close();
                 }
-              } finally {
-                request.close();
-              }
             }
 
             final int numBytesRead;
@@ -250,25 +277,43 @@ public class CdcAcmSerialDriver implements UsbSerialDriver {
         public void setParameters(int baudRate, int dataBits, int stopBits, int parity) {
             byte stopBitsByte;
             switch (stopBits) {
-                case STOPBITS_1: stopBitsByte = 0; break;
-                case STOPBITS_1_5: stopBitsByte = 1; break;
-                case STOPBITS_2: stopBitsByte = 2; break;
-                default: throw new IllegalArgumentException("Bad value for stopBits: " + stopBits);
+                case STOPBITS_1:
+                    stopBitsByte = 0;
+                    break;
+                case STOPBITS_1_5:
+                    stopBitsByte = 1;
+                    break;
+                case STOPBITS_2:
+                    stopBitsByte = 2;
+                    break;
+                default:
+                    throw new IllegalArgumentException("Bad value for stopBits: " + stopBits);
             }
 
             byte parityBitesByte;
             switch (parity) {
-                case PARITY_NONE: parityBitesByte = 0; break;
-                case PARITY_ODD: parityBitesByte = 1; break;
-                case PARITY_EVEN: parityBitesByte = 2; break;
-                case PARITY_MARK: parityBitesByte = 3; break;
-                case PARITY_SPACE: parityBitesByte = 4; break;
-                default: throw new IllegalArgumentException("Bad value for parity: " + parity);
+                case PARITY_NONE:
+                    parityBitesByte = 0;
+                    break;
+                case PARITY_ODD:
+                    parityBitesByte = 1;
+                    break;
+                case PARITY_EVEN:
+                    parityBitesByte = 2;
+                    break;
+                case PARITY_MARK:
+                    parityBitesByte = 3;
+                    break;
+                case PARITY_SPACE:
+                    parityBitesByte = 4;
+                    break;
+                default:
+                    throw new IllegalArgumentException("Bad value for parity: " + parity);
             }
 
             byte[] msg = {
-                    (byte) ( baudRate & 0xff),
-                    (byte) ((baudRate >> 8 ) & 0xff),
+                    (byte) (baudRate & 0xff),
+                    (byte) ((baudRate >> 8) & 0xff),
                     (byte) ((baudRate >> 16) & 0xff),
                     (byte) ((baudRate >> 24) & 0xff),
                     stopBitsByte,
@@ -324,35 +369,6 @@ public class CdcAcmSerialDriver implements UsbSerialDriver {
             sendAcmControlMessage(SET_CONTROL_LINE_STATE, value, null);
         }
 
-    }
-
-    public static Map<Integer, int[]> getSupportedDevices() {
-        final Map<Integer, int[]> supportedDevices = new LinkedHashMap<Integer, int[]>();
-        supportedDevices.put(Integer.valueOf(UsbId.VENDOR_ARDUINO),
-                new int[] {
-                        UsbId.ARDUINO_UNO,
-                        UsbId.ARDUINO_UNO_R3,
-                        UsbId.ARDUINO_MEGA_2560,
-                        UsbId.ARDUINO_MEGA_2560_R3,
-                        UsbId.ARDUINO_SERIAL_ADAPTER,
-                        UsbId.ARDUINO_SERIAL_ADAPTER_R3,
-                        UsbId.ARDUINO_MEGA_ADK,
-                        UsbId.ARDUINO_MEGA_ADK_R3,
-                        UsbId.ARDUINO_LEONARDO,
-                });
-        supportedDevices.put(Integer.valueOf(UsbId.VENDOR_VAN_OOIJEN_TECH),
-                new int[] {
-                    UsbId.VAN_OOIJEN_TECH_TEENSYDUINO_SERIAL,
-                });
-        supportedDevices.put(Integer.valueOf(UsbId.VENDOR_ATMEL),
-                new int[] {
-                    UsbId.ATMEL_LUFA_CDC_DEMO_APP,
-                });
-        supportedDevices.put(Integer.valueOf(UsbId.VENDOR_LEAFLABS),
-                new int[] {
-                    UsbId.LEAFLABS_MAPLE,
-                });
-        return supportedDevices;
     }
 
 }

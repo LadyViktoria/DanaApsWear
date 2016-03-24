@@ -32,22 +32,25 @@ public class ReadData {
     private static final String TAG = ReadData.class.getSimpleName();
     private static final int IO_TIMEOUT = 3000;
     private static final int MIN_LEN = 256;
-    private UsbSerialDriver mSerialDevice;
     protected final Object mReadBufferLock = new Object();
+    private UsbSerialDriver mSerialDevice;
     private UsbDeviceConnection mConnection;
     private UsbDevice mDevice;
 
-    public ReadData(){}
+    public ReadData() {
+    }
+
     public ReadData(UsbSerialDriver device) {
         mSerialDevice = device;
     }
+
     public ReadData(UsbSerialDriver device, UsbDeviceConnection connection, UsbDevice usbDevice) {
         mSerialDevice = device;
         mConnection = connection;
         mDevice = usbDevice;
         try {
-      mSerialDevice.getPorts().get(0).open(connection);
-        } catch(IOException e) {
+            mSerialDevice.getPorts().get(0).open(connection);
+        } catch (IOException e) {
             Log.d("FAILED WHILE", "trying to open");
         }
 //        }
@@ -69,7 +72,7 @@ public class ReadData {
         Log.d(TAG, "Reading " + numOfRecentPages + " EGV page(s)...");
         numOfRecentPages = numOfRecentPages - 1;
         EGVRecord[] allPages = new EGVRecord[0];
-        for (int i = Math.min(numOfRecentPages,endPage); i >= 0; i--) {
+        for (int i = Math.min(numOfRecentPages, endPage); i >= 0; i--) {
             int nextPage = endPage - i;
             Log.d(TAG, "Reading #" + i + " EGV pages (page number " + nextPage + ")");
             EGVRecord[] ithEGVRecordPage = readDataBasePage(recordType, nextPage);
@@ -102,7 +105,7 @@ public class ReadData {
         Log.d(TAG, "Reading " + numOfRecentPages + " Sensor page(s)...");
         numOfRecentPages = numOfRecentPages - 1;
         SensorRecord[] allPages = new SensorRecord[0];
-        for (int i = Math.min(numOfRecentPages,endPage); i >= 0; i--) {
+        for (int i = Math.min(numOfRecentPages, endPage); i >= 0; i--) {
             int nextPage = endPage - i;
             Log.d(TAG, "Reading #" + i + " Sensor pages (page number " + nextPage + ")");
             SensorRecord[] ithSensorRecordPage = readDataBasePage(recordType, nextPage);
@@ -121,6 +124,7 @@ public class ReadData {
         Log.d(TAG, "Reading Cal Records page...");
         return readDataBasePage(recordType, endPage);
     }
+
     public byte[] getRecentCalRecordsTest() {
         Log.d(TAG, "Reading Cal Records page range...");
         int recordType = Constants.RECORD_TYPES.CAL_SET.ordinal();
@@ -180,7 +184,7 @@ public class ReadData {
 
     private <T> T readDataBasePage(int recordType, int page) {
         byte numOfPages = 1;
-        if (page < 0){
+        if (page < 0) {
             throw new IllegalArgumentException("Invalid page requested:" + page);
         }
         ArrayList<Byte> payload = new ArrayList<Byte>();
@@ -195,9 +199,10 @@ public class ReadData {
         byte[] readData = read(2122).getData();
         return ParsePage(readData, recordType);
     }
+
     private byte[] readDataBasePageTest(int recordType, int page) {
         byte numOfPages = 1;
-        if (page < 0){
+        if (page < 0) {
             throw new IllegalArgumentException("Invalid page requested:" + page);
         }
         ArrayList<Byte> payload = new ArrayList<Byte>();
@@ -218,16 +223,18 @@ public class ReadData {
 //                UsbInterface mDataInterface = mDevice.getInterface(1);
 //                UsbEndpoint mWriteEndpoint = mDataInterface.getEndpoint(0);
 //                mConnection.bulkTransfer(mWriteEndpoint, packet, packet.length, IO_TIMEOUT);
-                  mSerialDevice.getPorts().get(0).write(packet, IO_TIMEOUT);
+                mSerialDevice.getPorts().get(0).write(packet, IO_TIMEOUT);
             } catch (Exception e) {
                 Log.e(TAG, "Unable to write to serial device.", e);
             }
         }
     }
+
     private byte[] writeCommandTest(int command, ArrayList<Byte> payload) {
         byte[] packet = new PacketBuilder(command, payload).compose();
         return packet;
     }
+
     private void writeCommand(int command) {
         byte[] packet = new PacketBuilder(command).compose();
         if (mSerialDevice != null) {
@@ -296,7 +303,7 @@ public class ReadData {
 
     private <T> T ParsePage(byte[] data, int recordType) {
         int HEADER_LEN = 28;
-        PageHeader pageHeader=new PageHeader(data);
+        PageHeader pageHeader = new PageHeader(data);
         int NUM_REC_OFFSET = 4;
         int numRec = data[NUM_REC_OFFSET];
         int rec_len;
@@ -331,7 +338,7 @@ public class ReadData {
                 return (T) meterRecords;
             case CAL_SET:
                 rec_len = 249;
-                if (pageHeader.getRevision()<=2) {
+                if (pageHeader.getRevision() <= 2) {
                     rec_len = 148;
                 }
                 CalRecord[] calRecords = new CalRecord[numRec];

@@ -43,7 +43,9 @@ public class PacketBuilder {
         packet.add(OFFSET_LENGTH, getLength());
         packet.add(OFFSET_NULL, NULL);
         packet.add(OFFSET_CMD, (byte) command);
-        if (this.payload != null) { this.packet.addAll(OFFSET_PAYLOAD, this.payload); }
+        if (this.payload != null) {
+            this.packet.addAll(OFFSET_PAYLOAD, this.payload);
+        }
         byte[] crc16 = CRC16.calculate(toBytes(), 0, this.packet.size());
         this.packet.add(crc16[0]);
         this.packet.add(crc16[1]);
@@ -57,7 +59,9 @@ public class PacketBuilder {
         packet.add(OFFSET_LENGTH, getLength());
         packet.add(OFFSET_NULL, NULL);
         packet.add(OFFSET_CMD, (byte) command);
-        if (this.payload != null) { this.packet.addAll(OFFSET_PAYLOAD, this.payload); }
+        if (this.payload != null) {
+            this.packet.addAll(OFFSET_PAYLOAD, this.payload);
+        }
         byte[] crc16 = CRC16.calculate(toBytes(), 0, this.packet.size());
         this.packet.add(crc16[0]);
         this.packet.add(crc16[1]);
@@ -87,11 +91,11 @@ public class PacketBuilder {
     public List<byte[]> toBytesList() {
         List<byte[]> byteMessages = new ArrayList<byte[]>();
         double totalPacketSize = packet.size();
-        int messages =(int) Math.ceil(totalPacketSize/18);
-        for(int m = 0; m < messages; m++) {
+        int messages = (int) Math.ceil(totalPacketSize / 18);
+        for (int m = 0; m < messages; m++) {
             int thisPacketSize;
             if (m == messages - 1) {
-                thisPacketSize = ((this.packet.size()+2) % 18);
+                thisPacketSize = ((this.packet.size() + 2) % 18);
             } else {
                 thisPacketSize = (20);
             }

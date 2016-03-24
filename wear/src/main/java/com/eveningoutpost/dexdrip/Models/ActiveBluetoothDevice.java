@@ -1,7 +1,6 @@
 package com.eveningoutpost.dexdrip.Models;
 
 import android.provider.BaseColumns;
-import android.util.Log;
 
 import com.activeandroid.Model;
 import com.activeandroid.annotation.Column;
@@ -38,7 +37,7 @@ public class ActiveBluetoothDevice extends Model {
 
     public static void connected() {
         ActiveBluetoothDevice activeBluetoothDevice = ActiveBluetoothDevice.first();
-        if(activeBluetoothDevice != null) {
+        if (activeBluetoothDevice != null) {
             activeBluetoothDevice.connected = true;
             activeBluetoothDevice.save();
         }
@@ -46,7 +45,7 @@ public class ActiveBluetoothDevice extends Model {
 
     public static void disconnected() {
         ActiveBluetoothDevice activeBluetoothDevice = ActiveBluetoothDevice.first();
-        if(activeBluetoothDevice != null) {
+        if (activeBluetoothDevice != null) {
             activeBluetoothDevice.connected = false;
             activeBluetoothDevice.save();
         }

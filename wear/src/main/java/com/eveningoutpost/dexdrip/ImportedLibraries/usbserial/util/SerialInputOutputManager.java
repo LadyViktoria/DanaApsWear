@@ -51,31 +51,10 @@ public class SerialInputOutputManager implements Runnable {
 
     // Synchronized by 'mWriteBuffer'
     private final ByteBuffer mWriteBuffer = ByteBuffer.allocate(BUFSIZ);
-
-    private enum State {
-        STOPPED,
-        RUNNING,
-        STOPPING
-    }
-
     // Synchronized by 'this'
     private State mState = State.STOPPED;
-
     // Synchronized by 'this'
     private Listener mListener;
-
-    public interface Listener {
-        /**
-         * Called when new incoming data is available.
-         */
-        public void onNewData(byte[] data);
-
-        /**
-         * Called when {@link SerialInputOutputManager#run()} aborts due to an
-         * error.
-         */
-        public void onRunError(Exception e);
-    }
 
     /**
      * Creates a new instance with no listener.
@@ -92,12 +71,12 @@ public class SerialInputOutputManager implements Runnable {
         mListener = listener;
     }
 
-    public synchronized void setListener(Listener listener) {
-        mListener = listener;
-    }
-
     public synchronized Listener getListener() {
         return mListener;
+    }
+
+    public synchronized void setListener(Listener listener) {
+        mListener = listener;
     }
 
     public void writeAsync(byte[] data) {
@@ -120,7 +99,7 @@ public class SerialInputOutputManager implements Runnable {
     /**
      * Continuously services the read and write buffers until {@link #stop()} is
      * called, or until a driver exception is raised.
-     *
+     * <p>
      * NOTE(mikey): Uses inefficient read/write-with-timeout.
      * TODO(mikey): Read asynchronously with {@link UsbRequest#queue(ByteBuffer, int)}
      */
@@ -146,7 +125,7 @@ public class SerialInputOutputManager implements Runnable {
             Log.w(TAG, "Run ending due to exception: " + e.getMessage(), e);
             final Listener listener = getListener();
             if (listener != null) {
-              listener.onRunError(e);
+                listener.onRunError(e);
             }
         } finally {
             synchronized (this) {
@@ -187,6 +166,25 @@ public class SerialInputOutputManager implements Runnable {
             }
             mDriver.write(outBuff, READ_WAIT_MILLIS);
         }
+    }
+
+    private enum State {
+        STOPPED,
+        RUNNING,
+        STOPPING
+    }
+
+    public interface Listener {
+        /**
+         * Called when new incoming data is available.
+         */
+        public void onNewData(byte[] data);
+
+        /**
+         * Called when {@link SerialInputOutputManager#run()} aborts due to an
+         * error.
+         */
+        public void onRunError(Exception e);
     }
 
 }

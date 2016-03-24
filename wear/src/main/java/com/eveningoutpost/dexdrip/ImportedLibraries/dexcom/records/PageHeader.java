@@ -18,15 +18,15 @@ import java.util.Arrays;
 // Some of this code may have been modified for use in this project
 
 public class PageHeader {
-    protected final int HEADER_SIZE=28;
-    protected final int FIRSTRECORDINDEX_OFFSET=0;
-    protected final int NUMRECS_OFFSET=4;
-    protected final int RECTYPE_OFFSET=8;
-    protected final int REV_OFFSET=9;
-    protected final int PAGENUMBER_OFFSET=10;
-    protected final int RESERVED2_OFFSET=14;
-    protected final int RESERVED3_OFFSET=18;
-    protected final int RESERVED4_OFFSET=22;
+    protected final int HEADER_SIZE = 28;
+    protected final int FIRSTRECORDINDEX_OFFSET = 0;
+    protected final int NUMRECS_OFFSET = 4;
+    protected final int RECTYPE_OFFSET = 8;
+    protected final int REV_OFFSET = 9;
+    protected final int PAGENUMBER_OFFSET = 10;
+    protected final int RESERVED2_OFFSET = 14;
+    protected final int RESERVED3_OFFSET = 18;
+    protected final int RESERVED4_OFFSET = 22;
 
     protected int firstRecordIndex;
     protected int numOfRecords;
@@ -36,7 +36,7 @@ public class PageHeader {
     protected int reserved2;
     protected int reserved3;
     protected int reserved4;
-    protected byte[] crc=new byte[2];
+    protected byte[] crc = new byte[2];
 
 
     public PageHeader(byte[] packet) {
@@ -50,8 +50,8 @@ public class PageHeader {
         reserved2 = ByteBuffer.wrap(packet).order(ByteOrder.LITTLE_ENDIAN).getInt(RESERVED2_OFFSET);
         reserved3 = ByteBuffer.wrap(packet).order(ByteOrder.LITTLE_ENDIAN).getInt(RESERVED3_OFFSET);
         reserved4 = ByteBuffer.wrap(packet).order(ByteOrder.LITTLE_ENDIAN).getInt(RESERVED4_OFFSET);
-        System.arraycopy(packet,HEADER_SIZE-Constants.CRC_LEN,crc,0,Constants.CRC_LEN);
-        byte[] crc_calc = CRC16.calculate(packet,0,HEADER_SIZE - Constants.CRC_LEN);
+        System.arraycopy(packet, HEADER_SIZE - Constants.CRC_LEN, crc, 0, Constants.CRC_LEN);
+        byte[] crc_calc = CRC16.calculate(packet, 0, HEADER_SIZE - Constants.CRC_LEN);
         if (!Arrays.equals(this.crc, crc_calc)) {
             throw new CRCFailRuntimeException("CRC check failed: " + Utils.bytesToHex(this.crc) + " vs " + Utils.bytesToHex(crc_calc));
         }

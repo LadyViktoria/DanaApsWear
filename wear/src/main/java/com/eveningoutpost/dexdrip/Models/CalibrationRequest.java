@@ -21,7 +21,7 @@ public class CalibrationRequest extends Model {
     @Column(name = "requestIfAbove")
     public double requestIfAbove;
 
-   @Column(name = "requestIfBelow")
+    @Column(name = "requestIfBelow")
     public double requestIfBelow;
 
     public static void createRange(double low, double high) {
@@ -30,6 +30,7 @@ public class CalibrationRequest extends Model {
         calibrationRequest.requestIfBelow = high;
         calibrationRequest.save();
     }
+
     public static void createOffset(double center, double distance) {
         CalibrationRequest calibrationRequest = new CalibrationRequest();
         calibrationRequest.requestIfAbove = center + distance;
@@ -42,19 +43,19 @@ public class CalibrationRequest extends Model {
         calibrationRequest.save();
     }
 
-    public static void clearAll(){
-        List<CalibrationRequest> calibrationRequests =  new Select()
-                                                            .from(CalibrationRequest.class)
-                                                            .execute();
-        if (calibrationRequests.size() >=1) {
+    public static void clearAll() {
+        List<CalibrationRequest> calibrationRequests = new Select()
+                .from(CalibrationRequest.class)
+                .execute();
+        if (calibrationRequests.size() >= 1) {
             for (CalibrationRequest calibrationRequest : calibrationRequests) {
                 calibrationRequest.delete();
             }
         }
     }
 
-    public static boolean shouldRequestCalibration(BgReading bgReading){
-        CalibrationRequest calibrationRequest =  new Select()
+    public static boolean shouldRequestCalibration(BgReading bgReading) {
+        CalibrationRequest calibrationRequest = new Select()
                 .from(CalibrationRequest.class)
                 .where("requestIfAbove < ?", bgReading.calculated_value)
                 .where("requestIfBelow > ?", bgReading.calculated_value)

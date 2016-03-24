@@ -43,13 +43,6 @@ import java.util.List;
  */
 public class SyncingService extends IntentService {
 
-    // Action for intent
-    private static final String ACTION_SYNC = "com.eveningoutpost.dexdrip.ImportedLibraries.dexcom.action.SYNC";
-    private static final String ACTION_CALIBRATION_CHECKIN = "com.eveningoutpost.dexdrip.CalibrationCheckInActivity";
-
-    // Parameters for intent
-    private static final String SYNC_PERIOD = "com.eveningoutpost.dexdrip.ImportedLibraries.dexcom.extra.SYNC_PERIOD";
-
     // Response to broadcast to activity
     public static final String RESPONSE_SGV = "mySGV";
     public static final String RESPONSE_TREND = "myTrend";
@@ -59,19 +52,26 @@ public class SyncingService extends IntentService {
     public static final String RESPONSE_DISPLAY_TIME = "myDisplayTime";
     public static final String RESPONSE_JSON = "myJSON";
     public static final String RESPONSE_BAT = "myBatLvl";
-
+    public static final int MIN_SYNC_PAGES = 2;
+    public static final int GAP_SYNC_PAGES = 20;
+    // Action for intent
+    private static final String ACTION_SYNC = "com.eveningoutpost.dexdrip.ImportedLibraries.dexcom.action.SYNC";
+    private static final String ACTION_CALIBRATION_CHECKIN = "com.eveningoutpost.dexdrip.CalibrationCheckInActivity";
+    // Parameters for intent
+    private static final String SYNC_PERIOD = "com.eveningoutpost.dexdrip.ImportedLibraries.dexcom.extra.SYNC_PERIOD";
     private final String TAG = SyncingService.class.getSimpleName();
+    // Constants
+    private final int TIME_SYNC_OFFSET = 10000;
     private Context mContext;
     private UsbManager mUsbManager;
     private UsbSerialDriver mSerialDevice;
     private UsbDevice dexcom;
     private UsbDeviceConnection mConnection;
 
-    // Constants
-    private final int TIME_SYNC_OFFSET = 10000;
-    public static final int MIN_SYNC_PAGES = 2;
-    public static final int GAP_SYNC_PAGES = 20;
 
+    public SyncingService() {
+        super("SyncingService");
+    }
 
     /**
      * Starts this service to perform action Single Sync with the given parameters. If
@@ -85,13 +85,30 @@ public class SyncingService extends IntentService {
         intent.putExtra(SYNC_PERIOD, numOfPages);
         context.startService(intent);
     }
+
     public static void startActionCalibrationCheckin(Context context) {
         Intent intent = new Intent(context, SyncingService.class);
         intent.setAction(ACTION_CALIBRATION_CHECKIN);
         context.startService(intent);
     }
-    public SyncingService() {
-        super("SyncingService");
+
+    static public boolean isG4Connected(Context c) {
+        UsbManager manager = (UsbManager) c.getSystemService(Context.USB_SERVICE);
+        HashMap<String, UsbDevice> deviceList = manager.getDeviceList();
+        Log.i("USB DEVICES = ", deviceList.toString());
+        Iterator<UsbDevice> deviceIterator = deviceList.values().iterator();
+        Log.i("USB DEVICES = ", String.valueOf(deviceList.size()));
+
+        while (deviceIterator.hasNext()) {
+            UsbDevice device = deviceIterator.next();
+            if (device.getVendorId() == 8867 && device.getProductId() == 71
+                    && device.getDeviceClass() == 2 && device.getDeviceSubclass() == 0
+                    && device.getDeviceProtocol() == 0) {
+                Log.i("CALIBRATION-CHECK-IN: ", "Dexcom Found!");
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override
@@ -113,7 +130,7 @@ public class SyncingService extends IntentService {
      * Handle action Sync in the provided background thread with the provided
      * parameters.
      */
-    private void performCalibrationCheckin(){
+    private void performCalibrationCheckin() {
         PowerManager pm = (PowerManager) getApplicationContext().getSystemService(Context.POWER_SERVICE);
         PowerManager.WakeLock wl = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "NSDownload");
         wl.acquire();
@@ -198,14 +215,14 @@ public class SyncingService extends IntentService {
                 EGVRecord recentEGV = recentRecords[recentRecords.length - 1];
 //                broadcastSGVToUI(recentEGV, uploadStatus, nextUploadTime + TIME_SYNC_OFFSET,
 //                                 displayTime, array ,batLevel);
-                broadcastSent=true;
+                broadcastSent = true;
             } catch (ArrayIndexOutOfBoundsException e) {
                 Log.wtf("Unable to read from the dexcom, maybe it will work next time", e);
             } catch (NegativeArraySizeException e) {
                 Log.wtf("Negative array exception from receiver", e);
             } catch (IndexOutOfBoundsException e) {
                 Log.wtf("IndexOutOfBounds exception from receiver", e);
-            } catch (CRCFailRuntimeException e){
+            } catch (CRCFailRuntimeException e) {
                 // FIXME: may consider localizing this catch at a lower level (like ReadData) so that
                 // if the CRC check fails on one type of record we can capture the values if it
                 // doesn't fail on other types of records. This means we'd need to broadcast back
@@ -230,18 +247,18 @@ public class SyncingService extends IntentService {
 
     private void save_most_recent_cal_record(CalRecord[] calRecords) {
         int size = calRecords.length;
-        Calibration.create(calRecords,getApplicationContext(), false, 0);
+        Calibration.create(calRecords, getApplicationContext(), false, 0);
     }
 
     private boolean acquireSerialDevice() {
         UsbDevice found_device = findDexcom();
 
-        if(mUsbManager == null) {
+        if (mUsbManager == null) {
             Log.w("CALIBRATION-CHECK-IN: ", "USB manager is null");
         }
 
 
-        if( mUsbManager.hasPermission(dexcom)) {                                           // the system is allowing us to poke around this device
+        if (mUsbManager.hasPermission(dexcom)) {                                           // the system is allowing us to poke around this device
 
             ProbeTable customTable = new ProbeTable();                                           // From the USB library...
             customTable.addProduct(0x22A3, 0x0047, CdcAcmSerialDriver.class);       // ...Specify the Vendor ID and Product ID
@@ -271,25 +288,6 @@ public class SyncingService extends IntentService {
         return false;
     }
 
-    static public boolean isG4Connected(Context c){
-        UsbManager manager = (UsbManager) c.getSystemService(Context.USB_SERVICE);
-        HashMap<String, UsbDevice> deviceList = manager.getDeviceList();
-        Log.i("USB DEVICES = ", deviceList.toString());
-        Iterator<UsbDevice> deviceIterator = deviceList.values().iterator();
-        Log.i("USB DEVICES = ", String.valueOf(deviceList.size()));
-
-        while(deviceIterator.hasNext()){
-            UsbDevice device = deviceIterator.next();
-            if (device.getVendorId() == 8867 && device.getProductId() == 71
-                    && device.getDeviceClass() == 2 && device.getDeviceSubclass() ==0
-                    && device.getDeviceProtocol() == 0){
-                Log.i("CALIBRATION-CHECK-IN: ", "Dexcom Found!");
-                return true;
-            }
-        }
-        return false;
-    }
-
     public UsbDevice findDexcom() {
         Log.i("CALIBRATION-CHECK-IN: ", "Searching for dexcom");
         mUsbManager = (UsbManager) getApplicationContext().getSystemService(Context.USB_SERVICE);
@@ -299,11 +297,11 @@ public class SyncingService extends IntentService {
         Iterator<UsbDevice> deviceIterator = deviceList.values().iterator();
         Log.i("USB DEVICES = ", String.valueOf(deviceList.size()));
 
-        while(deviceIterator.hasNext()){
+        while (deviceIterator.hasNext()) {
             UsbDevice device = deviceIterator.next();
             if (device.getVendorId() == 8867 && device.getProductId() == 71
-                    && device.getDeviceClass() == 2 && device.getDeviceSubclass() ==0
-                    && device.getDeviceProtocol() == 0){
+                    && device.getDeviceClass() == 2 && device.getDeviceSubclass() == 0
+                    && device.getDeviceProtocol() == 0) {
                 dexcom = device;
                 Log.i("CALIBRATION-CHECK-IN: ", "Dexcom Found!");
                 return device;
@@ -327,15 +325,15 @@ public class SyncingService extends IntentService {
         broadcastIntent.putExtra(RESPONSE_NEXT_UPLOAD_TIME, nextUploadTime);
         broadcastIntent.putExtra(RESPONSE_UPLOAD_STATUS, uploadStatus);
         broadcastIntent.putExtra(RESPONSE_DISPLAY_TIME, displayTime);
-        if (json!=null)
+        if (json != null)
             broadcastIntent.putExtra(RESPONSE_JSON, json.toString());
         broadcastIntent.putExtra(RESPONSE_BAT, batLvl);
         sendBroadcast(broadcastIntent);
     }
 
     private void broadcastSGVToUI() {
-        EGVRecord record=new EGVRecord(-1, Constants.TREND_ARROW_VALUES.NONE,new Date(),new Date());
-        broadcastSGVToUI(record,false, (long) (1000 * 60 * 5) + TIME_SYNC_OFFSET, new Date().getTime(), null, 0);
+        EGVRecord record = new EGVRecord(-1, Constants.TREND_ARROW_VALUES.NONE, new Date(), new Date());
+        broadcastSGVToUI(record, false, (long) (1000 * 60 * 5) + TIME_SYNC_OFFSET, new Date().getTime(), null, 0);
     }
 
 }

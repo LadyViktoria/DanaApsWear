@@ -38,17 +38,18 @@ abstract class CommonUsbSerialPort implements UsbSerialPort {
 
     protected final UsbDevice mDevice;
     protected final int mPortNumber;
-
-    // non-null when open()
-    protected UsbDeviceConnection mConnection = null;
-
     protected final Object mReadBufferLock = new Object();
     protected final Object mWriteBufferLock = new Object();
-
-    /** Internal read buffer.  Guarded by {@link #mReadBufferLock}. */
+    // non-null when open()
+    protected UsbDeviceConnection mConnection = null;
+    /**
+     * Internal read buffer.  Guarded by {@link #mReadBufferLock}.
+     */
     protected byte[] mReadBuffer;
 
-    /** Internal write buffer.  Guarded by {@link #mWriteBufferLock}. */
+    /**
+     * Internal write buffer.  Guarded by {@link #mWriteBufferLock}.
+     */
     protected byte[] mWriteBuffer;
 
     public CommonUsbSerialPort(UsbDevice device, int portNumber) {
@@ -82,7 +83,8 @@ abstract class CommonUsbSerialPort implements UsbSerialPort {
 
     /**
      * Returns the device serial number
-     *  @return serial number
+     *
+     * @return serial number
      */
     @Override
     public String getSerial() {

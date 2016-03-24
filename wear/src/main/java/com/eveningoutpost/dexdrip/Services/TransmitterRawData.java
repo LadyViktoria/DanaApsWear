@@ -1,13 +1,13 @@
 package com.eveningoutpost.dexdrip.Services;
+
 import java.util.Date;
 //import com.mongodb.BasicDBObject;
+
 /**
  * Created by John Costik on 6/7/14.
  */
 public class TransmitterRawData {
 
-
-    private long _id;
 
     public String Id;
     public int TransmissionId;
@@ -23,6 +23,11 @@ public class TransmitterRawData {
     // When sending set this value to the relative time...
     // The time between the capture and now...
     public long RelativeTime;
+    private long _id;
+
+    public TransmitterRawData() {
+
+    }
 
     public int getTransmissionId() {
         return TransmissionId;
@@ -116,47 +121,43 @@ public class TransmitterRawData {
         return RelativeTime;
     }
 
-    public TransmitterRawData(){
+    /*
+        public TransmitterRawData(String id, String raw, String filter, String battery, String rssi, int uploaderBattery){
+            RawValue = Integer.parseInt(raw);
+            FilteredValue = Integer.parseInt(filter);
+            TransmitterId = id;
+            BatteryLife = Integer.parseInt(battery);
+            ReceivedSignalStrength = Integer.parseInt(rssi);
+            CaptureDateTime = new Date().getTime();
+            UploaderBatteryLife = uploaderBattery;
 
-    }
-/*
-    public TransmitterRawData(String id, String raw, String filter, String battery, String rssi, int uploaderBattery){
-        RawValue = Integer.parseInt(raw);
-        FilteredValue = Integer.parseInt(filter);
-        TransmitterId = id;
-        BatteryLife = Integer.parseInt(battery);
-        ReceivedSignalStrength = Integer.parseInt(rssi);
-        CaptureDateTime = new Date().getTime();
-        UploaderBatteryLife = uploaderBattery;
-
-        Uploaded = 0;
-        UploadAttempts = 1;
-    }
-
-    public TransmitterRawData(byte[] buffer, int len, Context context){
-
-        StringBuilder toParse = new StringBuilder();
-        for (int i = 0; i < len; ++i) {
-            toParse.append((char) buffer[i]);
+            Uploaded = 0;
+            UploadAttempts = 1;
         }
-        String[] parsed = toParse.toString().split("\\s+");
 
-        RawValue = Integer.parseInt(parsed[1]);
-        FilteredValue = Integer.parseInt(parsed[2]);
-        TransmitterId = parsed[0];
-        BatteryLife = Integer.parseInt(parsed[3]);
-        ReceivedSignalStrength = Integer.parseInt(parsed[4]);
-        TransmissionId = Integer.parseInt(parsed[5]);
-        CaptureDateTime = new Date().getTime();
+        public TransmitterRawData(byte[] buffer, int len, Context context){
 
-        Intent i = context.registerReceiver(null, new IntentFilter(Intent.ACTION_BATTERY_CHANGED));
-        UploaderBatteryLife = i.getIntExtra(BatteryManager.EXTRA_LEVEL, -1);
-        Uploaded = 0;
-        UploadAttempts = 1;
-    }
-*/
-    public String toTableString()
-    {
+            StringBuilder toParse = new StringBuilder();
+            for (int i = 0; i < len; ++i) {
+                toParse.append((char) buffer[i]);
+            }
+            String[] parsed = toParse.toString().split("\\s+");
+
+            RawValue = Integer.parseInt(parsed[1]);
+            FilteredValue = Integer.parseInt(parsed[2]);
+            TransmitterId = parsed[0];
+            BatteryLife = Integer.parseInt(parsed[3]);
+            ReceivedSignalStrength = Integer.parseInt(parsed[4]);
+            TransmissionId = Integer.parseInt(parsed[5]);
+            CaptureDateTime = new Date().getTime();
+
+            Intent i = context.registerReceiver(null, new IntentFilter(Intent.ACTION_BATTERY_CHANGED));
+            UploaderBatteryLife = i.getIntExtra(BatteryManager.EXTRA_LEVEL, -1);
+            Uploaded = 0;
+            UploadAttempts = 1;
+        }
+    */
+    public String toTableString() {
         String displayDt = new Date(getCaptureDateTime()).toLocaleString() + System.getProperty("line.separator");
         String transmitterId = "Transmitter Id: " + getTransmitterId() + System.getProperty("line.separator");
         String transmissionId = "Transmission Id: " + getTransmissionId() + System.getProperty("line.separator");
@@ -166,7 +167,7 @@ public class TransmitterRawData {
         String signalVal = "RSSI: " + getReceivedSignalStrength() + " " + System.getProperty("line.separator");
         String uploadDeviceBatteryVal = "Uploader Battery: " + getUploaderBatteryLife() + " " + System.getProperty("line.separator");
         String uploaded = "Uploaded: " + getUploaded() + " " + System.getProperty("line.separator");
-        String RelativeTime = "relateive time (seconds): " + getRelativeTime() / 1000 + " "+ System.getProperty("line.separator");
+        String RelativeTime = "relateive time (seconds): " + getRelativeTime() / 1000 + " " + System.getProperty("line.separator");
 
         return displayDt + transmitterId + transmissionId + rawVal + filterVal + batteryVal + signalVal + uploadDeviceBatteryVal + uploaded + RelativeTime;
     }

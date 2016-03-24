@@ -32,7 +32,7 @@ public class ForegroundServiceStarter {
             mHandler.post(new Runnable() {
                 @Override
                 public void run() {
-                   // mService.startForeground(new Notifications().ongoingNotificationId, new Notifications().createOngoingNotification(mContext));
+                    // mService.startForeground(new Notifications().ongoingNotificationId, new Notifications().createOngoingNotification(mContext));
                 }
             });
         }

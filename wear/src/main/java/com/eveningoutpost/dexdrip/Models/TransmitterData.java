@@ -37,7 +37,9 @@ public class TransmitterData extends Model {
     public String uuid;
 
     public static synchronized TransmitterData create(byte[] buffer, int len, Long timestamp) {
-        if (len < 6) { return null; }
+        if (len < 6) {
+            return null;
+        }
         TransmitterData transmitterData = new TransmitterData();
         if (buffer[0] == 0x11 && buffer[1] == 0x00) {
             //this is a dexbridge packet.  Process accordingly.
@@ -53,11 +55,13 @@ public class TransmitterData extends Model {
         } else { //this is NOT a dexbridge packet.  Process accordingly.
             Log.i(TAG, "create Processing a BTWixel or IPWixel packet");
             StringBuilder data_string = new StringBuilder();
-            for (int i = 0; i < len; ++i) { data_string.append((char) buffer[i]); }
+            for (int i = 0; i < len; ++i) {
+                data_string.append((char) buffer[i]);
+            }
             String[] data = data_string.toString().split("\\s+");
 
-            if (data.length > 1) { 
-                transmitterData.sensor_battery_level = Integer.parseInt(data[1]); 
+            if (data.length > 1) {
+                transmitterData.sensor_battery_level = Integer.parseInt(data[1]);
             }
             transmitterData.raw_data = Integer.parseInt(data[0]);
             transmitterData.filtered_data = Integer.parseInt(data[0]);
@@ -74,7 +78,7 @@ public class TransmitterData extends Model {
         return transmitterData;
     }
 
-    public static synchronized TransmitterData create(int raw_data ,int sensor_battery_level, long timestamp) {
+    public static synchronized TransmitterData create(int raw_data, int sensor_battery_level, long timestamp) {
         TransmitterData lastTransmitterData = TransmitterData.last();
         if (lastTransmitterData != null && lastTransmitterData.raw_data == raw_data && Math.abs(lastTransmitterData.timestamp - new Date().getTime()) < (120000)) { //Stop allowing duplicate data, its bad!
             return null;
@@ -82,7 +86,7 @@ public class TransmitterData extends Model {
 
         TransmitterData transmitterData = new TransmitterData();
         transmitterData.sensor_battery_level = sensor_battery_level;
-        transmitterData.raw_data = raw_data ;
+        transmitterData.raw_data = raw_data;
         transmitterData.timestamp = timestamp;
         transmitterData.uuid = UUID.randomUUID().toString();
         transmitterData.save();

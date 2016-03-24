@@ -85,13 +85,13 @@ public class Constants {
 
     public enum TREND_ARROW_VALUES {
         NONE(0),
-        DOUBLE_UP(1,"\u21C8", "DoubleUp"),
-        SINGLE_UP(2,"\u2191", "SingleUp"),
-        UP_45(3,"\u2197", "FortyFiveUp"),
-        FLAT(4,"\u2192", "Flat"),
-        DOWN_45(5,"\u2198", "FortyFiveDown"),
-        SINGLE_DOWN(6,"\u2193", "SingleDown"),
-        DOUBLE_DOWN(7,"\u21CA", "DoubleDown"),
+        DOUBLE_UP(1, "\u21C8", "DoubleUp"),
+        SINGLE_UP(2, "\u2191", "SingleUp"),
+        UP_45(3, "\u2197", "FortyFiveUp"),
+        FLAT(4, "\u2192", "Flat"),
+        DOWN_45(5, "\u2198", "FortyFiveDown"),
+        SINGLE_DOWN(6, "\u2193", "SingleDown"),
+        DOUBLE_DOWN(7, "\u21CA", "DoubleDown"),
         NOT_COMPUTABLE(8, "", "NOT_COMPUTABLE"),
         OUT_OF_RANGE(9, "", "OUT_OF_RANGE");
 
@@ -100,13 +100,13 @@ public class Constants {
         private int myID;
 
         TREND_ARROW_VALUES(int id, String a, String t) {
-            myID=id;
+            myID = id;
             arrowSymbol = a;
             trendName = t;
         }
 
         TREND_ARROW_VALUES(int id) {
-            this(id,null, null);
+            this(id, null, null);
         }
 
         public String Symbol() {
@@ -125,7 +125,7 @@ public class Constants {
             }
         }
 
-        public int getID(){
+        public int getID() {
             return myID;
         }
 
@@ -145,33 +145,34 @@ public class Constants {
 
         private String name;
         private int val;
-        private SPECIALBGVALUES_MGDL(String s, int i){
-            name=s;
-            val=i;
+
+        private SPECIALBGVALUES_MGDL(String s, int i) {
+            name = s;
+            val = i;
         }
 
-        public int getValue(){
-            return val;
-        }
-
-        public String toString(){
-            return name;
-        }
-
-        public static SPECIALBGVALUES_MGDL getEGVSpecialValue(int val){
-            for (SPECIALBGVALUES_MGDL e: values()){
-                if (e.getValue()==val)
+        public static SPECIALBGVALUES_MGDL getEGVSpecialValue(int val) {
+            for (SPECIALBGVALUES_MGDL e : values()) {
+                if (e.getValue() == val)
                     return e;
             }
             return null;
         }
 
-        public static boolean isSpecialValue(int val){
-            for (SPECIALBGVALUES_MGDL e: values()){
-                if (e.getValue()==val)
+        public static boolean isSpecialValue(int val) {
+            for (SPECIALBGVALUES_MGDL e : values()) {
+                if (e.getValue() == val)
                     return true;
             }
             return false;
+        }
+
+        public int getValue() {
+            return val;
+        }
+
+        public String toString() {
+            return name;
         }
 
     }

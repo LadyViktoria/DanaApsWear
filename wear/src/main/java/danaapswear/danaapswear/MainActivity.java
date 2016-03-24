@@ -27,9 +27,9 @@ import java.util.Calendar;
 
 public class MainActivity extends WearableActivity {
 
-    int year, month ,day ,hour ,minute;
+    int year, month, day, hour, minute;
     String txid, selectcollectionmethod, getAddress, calibration, getName;
-    Boolean stopsensor , startbt, calibrationcheckin;
+    Boolean stopsensor, startbt, calibrationcheckin;
     private TextView mTextView;
 
 
@@ -77,16 +77,16 @@ public class MainActivity extends WearableActivity {
     @Override
     public boolean dispatchTouchEvent(MotionEvent ev) {
         showBG();
-        return  super.dispatchTouchEvent(ev);
+        return super.dispatchTouchEvent(ev);
     }
 
-    public void showBG(){
+    public void showBG() {
         BgReading lastBgreading = BgReading.last();
-        String display = "Received :" + lastBgreading.toString();
+        String display = "Received :" + lastBgreading;
         mTextView.setText(display);
     }
 
-    public void addcalibration(){
+    public void addcalibration() {
         loadPrefs();
         if (calibrationcheckin == true) {
             //double calValue = Double.parseDouble(calibration);
@@ -102,14 +102,15 @@ public class MainActivity extends WearableActivity {
         }
     }
 
-    public void stopsensor(){
+    public void stopsensor() {
         loadPrefs();
-        if (stopsensor == true){
+        if (stopsensor == true) {
             Sensor.stopSensor();
-            Log.d("Sensor", "sensor stopped");}
-        else{
-            if (Sensor.isActive()) {Log.d("Sensor", "sensor is active:" + Sensor.isActive());}
-            else {
+            Log.d("Sensor", "sensor stopped");
+        } else {
+            if (Sensor.isActive()) {
+                Log.d("Sensor", "sensor is active:" + Sensor.isActive());
+            } else {
                 Log.d("Sensor", "sensor is not active starting new Sensor:" + Sensor.isActive());
                 //new calendar
                 Calendar calendar = Calendar.getInstance();
@@ -122,24 +123,25 @@ public class MainActivity extends WearableActivity {
         }
     }
 
-    public void startbt(){
+    public void startbt() {
         loadPrefs();
-        if (startbt == true){
+        if (startbt == true) {
             initBTDevice();
             Log.d("Bluetooth", "started");
         }
     }
 
 
-    private void callibrationCheckin(){
+    private void callibrationCheckin() {
         if (Sensor.isActive()) {
             SyncingService.startActionCalibrationCheckin(getApplicationContext());
-         Log.d("CALIBRATION", "Checked in all calibrations");
-         finish();
+            Log.d("CALIBRATION", "Checked in all calibrations");
+            finish();
         } else {
             Log.d("CALIBRATION", "ERROR, sensor not active");
         }
     }
+
     private void initBTDevice() {
         ActiveBluetoothDevice btDevice = new Select().from(ActiveBluetoothDevice.class)
                 .orderBy("_ID desc")

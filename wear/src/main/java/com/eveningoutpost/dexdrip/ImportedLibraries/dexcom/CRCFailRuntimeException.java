@@ -5,7 +5,7 @@ package com.eveningoutpost.dexdrip.ImportedLibraries.dexcom;
 // Some of this code may have been modified for use in this project
 
 public class CRCFailRuntimeException extends RuntimeException {
-    public CRCFailRuntimeException(String message){
+    public CRCFailRuntimeException(String message) {
         super(message);
     }
 }

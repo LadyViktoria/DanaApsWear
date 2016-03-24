@@ -1,40 +1,20 @@
 <TableLayout
 
+    xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_gravity="center_horizontal"
-    xmlns:android="http://schemas.android.com/apk/res/android">
+    android:layout_gravity="center_horizontal">
 
     <TableRow
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
-        <Space
-            android:layout_width="20px"
-            android:layout_height="100px"
-            android:layout_column="0"
-            android:layout_span="2" />
     </TableRow>
 
     <TableRow
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
-        <Button
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Config"
-            android:id="@+id/configButton"
-            android:layout_alignParentTop="true"
-            android:layout_alignParentStart="true" />
-
-        <Button
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Send Config to Wearable"
-            android:id="@+id/sendconfigButton"
-            android:layout_alignParentTop="true"
-            android:layout_alignParentEnd="true" />
     </TableRow>
 
 
@@ -45,8 +25,36 @@
         <Space
             android:layout_width="20px"
             android:layout_height="100px"
-            android:layout_column="0"
-            android:layout_span="2" />
+            android:layout_column="1" />
+    </TableRow>
+
+    <TableRow
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <Button
+            android:id="@+id/startsensor"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_column="1"
+            android:text="Start Sensor" />
+
+        <Button
+            android:id="@+id/stopsensor"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_column="2"
+            android:text="Stop Sensor" />
+    </TableRow>
+
+    <TableRow
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <Space
+            android:layout_width="20px"
+            android:layout_height="100px"
+            android:layout_column="1" />
     </TableRow>
 
     <TableRow
@@ -57,81 +65,87 @@
             android:id="@+id/textView2"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textAppearance="?android:attr/textAppearanceLarge"
-            android:text="Enter Calibration:"
             android:layout_alignParentStart="true"
-            android:layout_below="@+id/configButton" />
+            android:layout_below="@+id/configButton"
+            android:layout_column="1"
+            android:text="Calibration:"
+            android:textAppearance="?android:attr/textAppearanceLarge" />
 
         <EditText
             android:id="@+id/calibration"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_below="@+id/textView2"
+            android:layout_alignEnd="@+id/slope"
             android:layout_alignParentStart="true"
-            android:layout_alignEnd="@+id/slope" />
-    </TableRow>
-
-    <Button
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Send Calibration"
-        android:id="@+id/sendcalibrationButton"
-        />
-
-    <TableRow
-        android:layout_width="match_parent"
-        android:layout_height="match_parent">
-
-        <Space
-            android:layout_width="20px"
-            android:layout_height="100px"
-            android:layout_column="0"
-            android:layout_span="2" />
+            android:layout_below="@+id/textView2"
+            android:layout_column="2"
+            android:focusable="false" />
     </TableRow>
 
     <TableRow
         android:layout_width="match_parent"
         android:layout_height="match_parent">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_column="1"
+            android:text="Double Calibration:"
+            android:textAppearance="?android:attr/textAppearanceLarge" />
+
+        <EditText
+            android:id="@+id/doublecalibration"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_column="2"
+            android:focusable="false"
+            android:textAlignment="center" />
+    </TableRow>
+
+    <TableRow
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <TextView
+            android:id="@+id/textView5"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentStart="true"
+            android:layout_column="1"
+            android:text="Slope:"
+            android:textAppearance="?android:attr/textAppearanceLarge" />
 
         <EditText
             android:id="@+id/slope"
             android:layout_width="169dp"
             android:layout_height="wrap_content"
-            android:layout_alignParentStart="true" />
+            android:layout_alignParentStart="true"
+            android:layout_column="2"
+            android:focusable="false" />
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textAppearance="?android:attr/textAppearanceLarge"
-            android:text="Slope"
-            android:id="@+id/textView5"
-            android:layout_alignParentStart="true" />
     </TableRow>
 
     <TableRow
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
+        <TextView
+            android:id="@+id/textView6"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentStart="true"
+            android:layout_column="1"
+            android:text="Intercept:"
+            android:textAppearance="?android:attr/textAppearanceLarge" />
+
         <EditText
             android:id="@+id/intercept"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_alignParentStart="true" />
+            android:layout_alignParentStart="true"
+            android:layout_column="2"
+            android:focusable="false" />
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textAppearance="?android:attr/textAppearanceLarge"
-            android:text="Intercept"
-            android:id="@+id/textView6"
-            android:layout_alignParentStart="true" />
     </TableRow>
 
-    <Button
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Send Slope &amp; Intercept"
-        android:id="@+id/sendslopeintercept"
-        />
-
-   </TableLayout>
+</TableLayout>

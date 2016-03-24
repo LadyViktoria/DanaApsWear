@@ -19,11 +19,9 @@ import javax.xml.parsers.DocumentBuilderFactory;
 // Some of this code may have been modified for use in this project
 
 public class GenericXMLRecord extends GenericTimestampRecord {
+    private final String TAG = GenericXMLRecord.class.getSimpleName();
     int XML_START = 8;
     int XML_END = 241;
-
-    private final String TAG = GenericXMLRecord.class.getSimpleName();
-
     private Element xmlElement;
 
     public GenericXMLRecord(byte[] packet) {
@@ -33,8 +31,7 @@ public class GenericXMLRecord extends GenericTimestampRecord {
         String xml = new String(Arrays.copyOfRange(packet, XML_START, XML_END));
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         DocumentBuilder builder;
-        try
-        {
+        try {
             builder = factory.newDocumentBuilder();
             document = builder.parse(new InputSource(new StringReader(xml)));
             xmlElement = document.getDocumentElement();

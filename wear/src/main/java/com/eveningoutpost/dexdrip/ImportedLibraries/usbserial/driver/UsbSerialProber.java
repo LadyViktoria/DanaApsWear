@@ -30,7 +30,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- *
  * @author mike wakerly (opensource@hoho.com)
  */
 public class UsbSerialProber {
@@ -80,7 +79,7 @@ public class UsbSerialProber {
      *
      * @param usbDevice the usb device to probe
      * @return a new {@link UsbSerialDriver} compatible with this device, or
-     *         {@code null} if none available.
+     * {@code null} if none available.
      */
     public UsbSerialDriver probeDevice(final UsbDevice usbDevice) {
         final int vendorId = usbDevice.getVendorId();

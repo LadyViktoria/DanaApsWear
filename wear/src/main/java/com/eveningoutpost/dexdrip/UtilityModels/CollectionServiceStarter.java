@@ -23,37 +23,56 @@ import java.io.IOException;
 public class CollectionServiceStarter {
 
 
-
-    private Context mContext;
     private final static String TAG = CollectionServiceStarter.class.getSimpleName();
+    private Context mContext;
 
+
+    public CollectionServiceStarter(Context context) {
+        mContext = context;
+    }
 
     public static boolean isBTWixel(Context context) {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
         String collection_method = prefs.getString("dex_collection_method", "BluetoothWixel");
         return collection_method.compareTo("BluetoothWixel") == 0;
     }
-    public static boolean isBTWixel(String collection_method) { return collection_method.equals("BluetoothWixel"); }
+
+    public static boolean isBTWixel(String collection_method) {
+        return collection_method.equals("BluetoothWixel");
+    }
 
     public static boolean isDexbridgeWixel(Context context) {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
         String collection_method = prefs.getString("dex_collection_method", "BluetoothWixel");
         return collection_method.compareTo("DexbridgeWixel") == 0;
     }
-    public static boolean isDexbridgeWixel(String collection_method) { return collection_method.equals("DexbridgeWixel"); }
 
-
+    public static boolean isDexbridgeWixel(String collection_method) {
+        return collection_method.equals("DexbridgeWixel");
+    }
 
     public static void newStart(Context context) {
         CollectionServiceStarter collectionServiceStarter = new CollectionServiceStarter(context);
         collectionServiceStarter.start(context);
     }
 
+    public static void restartCollectionService(Context context) {
+        CollectionServiceStarter collectionServiceStarter = new CollectionServiceStarter(context);
+        collectionServiceStarter.stopBtWixelService();
+        collectionServiceStarter.start(context);
+    }
+
+    public static void restartCollectionService(Context context, String collection_method) {
+        CollectionServiceStarter collectionServiceStarter = new CollectionServiceStarter(context);
+        collectionServiceStarter.stopBtWixelService();
+        collectionServiceStarter.start(context, collection_method);
+    }
+
     public void start(Context context, String collection_method) {
         mContext = context;
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(mContext);
 
-        if(isBTWixel(collection_method)||isDexbridgeWixel(collection_method)) {
+        if (isBTWixel(collection_method) || isDexbridgeWixel(collection_method)) {
             Log.d("DexDrip", "Starting bt wixel collector");
             startBtWixelService();
         }
@@ -62,7 +81,7 @@ public class CollectionServiceStarter {
         Log.d(TAG, collection_method);
 
         // Start logging to logcat
-        if(prefs.getBoolean("store_logs",false)) {
+        if (prefs.getBoolean("store_logs", false)) {
             String filePath = Environment.getExternalStorageDirectory() + "/xdriplogcat.txt";
             try {
                 String[] cmd = {"/system/bin/sh", "-c", "ps | grep logcat  || logcat -f " + filePath +
@@ -82,28 +101,13 @@ public class CollectionServiceStarter {
         start(context, collection_method);
     }
 
-    public CollectionServiceStarter(Context context) {
-        mContext = context;
-    }
-
-    public static void restartCollectionService(Context context) {
-        CollectionServiceStarter collectionServiceStarter = new CollectionServiceStarter(context);
-        collectionServiceStarter.stopBtWixelService();
-        collectionServiceStarter.start(context);
-    }
-
-    public static void restartCollectionService(Context context, String collection_method) {
-        CollectionServiceStarter collectionServiceStarter = new CollectionServiceStarter(context);
-        collectionServiceStarter.stopBtWixelService();
-        collectionServiceStarter.start(context, collection_method);
-    }
-
     private void startBtWixelService() {
         Log.d(TAG, "starting bt wixel service");
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.JELLY_BEAN_MR2) {
             mContext.startService(new Intent(mContext, DexCollectionService.class));
-    	}
+        }
     }
+
     private void stopBtWixelService() {
         Log.d(TAG, "stopping bt wixel service");
         mContext.stopService(new Intent(mContext, DexCollectionService.class));

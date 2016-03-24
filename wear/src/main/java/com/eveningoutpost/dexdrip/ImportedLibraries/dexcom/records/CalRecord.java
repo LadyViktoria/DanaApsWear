@@ -18,7 +18,7 @@ public class CalRecord extends GenericTimestampRecord {
     private double scale;
     private int[] unk = new int[3];
     private double decay;
-    private int  numRecords;
+    private int numRecords;
     private CalSubrecord[] calSubrecords = new CalSubrecord[12];
     private int SUB_LEN = 17;
 

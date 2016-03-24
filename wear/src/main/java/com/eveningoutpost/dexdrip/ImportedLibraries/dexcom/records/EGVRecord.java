@@ -32,13 +32,16 @@ public class EGVRecord extends GenericTimestampRecord {
         noise = noiseValue;
     }
 
-    public EGVRecord(int bGValue,Constants.TREND_ARROW_VALUES trend,Date displayTime, Date systemTime){
+    public EGVRecord(int bGValue, Constants.TREND_ARROW_VALUES trend, Date displayTime, Date systemTime) {
         super(displayTime, systemTime);
-        this.bGValue=bGValue;
-        this.trend=trend;
+        this.bGValue = bGValue;
+        this.trend = trend;
     }
 
-    public String noiseValue() { return String.valueOf(noise); }
+    public String noiseValue() {
+        return String.valueOf(noise);
+    }
+
     public int getBGValue() {
         return bGValue;
     }
