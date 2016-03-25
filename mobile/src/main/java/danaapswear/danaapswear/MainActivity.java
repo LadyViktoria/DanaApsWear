@@ -14,17 +14,26 @@ import android.widget.Button;
 import android.widget.EditText;
 
 import com.fourmob.datetimepicker.date.DatePickerDialog;
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.wearable.PutDataMapRequest;
+import com.google.android.gms.wearable.PutDataRequest;
+import com.google.android.gms.wearable.Wearable;
 import com.sleepbot.datetimepicker.time.RadialPickerLayout;
 import com.sleepbot.datetimepicker.time.TimePickerDialog;
 
 import java.util.Calendar;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener,
+        GoogleApiClient.ConnectionCallbacks,
+        GoogleApiClient.OnConnectionFailedListener,
         DatePickerDialog.OnDateSetListener,
         TimePickerDialog.OnTimeSetListener{
-    Button startsensor, stopsensor;
+    Button startsensor, stopsensor, stopcollectionservice, startcollectionservice;
     EditText calibration, doublecalibration, intercept, slope;
     int year, month ,day ,hour ,minute;
+    private GoogleApiClient googleApiClient;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -35,6 +44,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         stopsensor = (Button) findViewById(R.id.stopsensor);
         stopsensor.setOnClickListener(this);
+
+        startcollectionservice = (Button) findViewById(R.id.startcollectionservice);
+        startcollectionservice.setOnClickListener(this);
+
+        stopcollectionservice = (Button) findViewById(R.id.stopcollectionservice);
+        stopcollectionservice.setOnClickListener(this);
 
         calibration = (EditText) findViewById(R.id.calibration);
         calibration.setInputType(InputType.TYPE_CLASS_NUMBER);
@@ -51,6 +66,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         intercept = (EditText) findViewById(R.id.intercept);
         intercept.setInputType(InputType.TYPE_CLASS_NUMBER);
         intercept.setOnClickListener(this);
+
+        googleApiClient = new GoogleApiClient.Builder(this)
+                .addConnectionCallbacks(this)
+                .addOnConnectionFailedListener(this)
+                .addApi(Wearable.API)
+                .build();
     }
 
     @Override
@@ -62,6 +83,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 break;
             case R.id.stopsensor:
                 sensorstoponClick();
+                break;
+            case R.id.startcollectionservice:
+                startcollectionserviceonClick();
+                break;
+            case R.id.stopcollectionservice:
+                stopcollectionserviceonClick();
                 break;
             case R.id.calibration:
                 calibrationonClick();
@@ -231,7 +258,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         datePickerDialog.show(getSupportFragmentManager(), "datepicker");
     }
     public void sensorstoponClick(){
-
+        PutDataMapRequest putDataMapReq = PutDataMapRequest.create("/wearable_stopsensor").setUrgent();
+        putDataMapReq.getDataMap().putString("timestamp", Long.toString(System.currentTimeMillis()));
+        putDataMapReq.getDataMap().putString("StopSensor", Long.toString(System.currentTimeMillis()));
+        PutDataRequest putDataReq = putDataMapReq.asPutDataRequest();
+        Wearable.DataApi.putDataItem(googleApiClient, putDataReq);
     }
 
     @Override
@@ -254,18 +285,83 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 .setMessage("Sensor Started at: " + day + "." + month + "." + year + "  " + hour + ":" + minute)
                 .setPositiveButton("Send to Wear", new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int which) {
-                       /*
-                        if (googleClient.isConnected()) {
-                            Log.v("myTag", "send DataMap to data layer");
-
-                        } else {
-                            Log.v("myTag", "send DataMap to data layer Failed");
-                        } */
+                        PutDataMapRequest putDataMapReq = PutDataMapRequest.create("/wearable_startsensor").setUrgent();
+                        putDataMapReq.getDataMap().putString("timestamp", Long.toString(System.currentTimeMillis()));
+                        putDataMapReq.getDataMap().putString("StartSensor", Long.toString(System.currentTimeMillis()));
+                        putDataMapReq.getDataMap().putInt("day", day);
+                        putDataMapReq.getDataMap().putInt("year", year);
+                        putDataMapReq.getDataMap().putInt("month", month);
+                        putDataMapReq.getDataMap().putInt("hour", hour);
+                        putDataMapReq.getDataMap().putInt("minute", minute);
+                        PutDataRequest putDataReq = putDataMapReq.asPutDataRequest();
+                        Wearable.DataApi.putDataItem(googleApiClient, putDataReq);
                     }
 
                 })
                 .setNegativeButton("cancel", new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int which) {
+                    }
+                })
+                .show();
+    }
+
+
+    public void startcollectionserviceonClick(){
+        PutDataMapRequest putDataMapReq = PutDataMapRequest.create("/wearable_startcollectionservice").setUrgent();
+        putDataMapReq.getDataMap().putString("timestamp", Long.toString(System.currentTimeMillis()));
+        putDataMapReq.getDataMap().putString("StartCollectionService", Long.toString(System.currentTimeMillis()));
+        PutDataRequest putDataReq = putDataMapReq.asPutDataRequest();
+        Wearable.DataApi.putDataItem(googleApiClient, putDataReq);
+    }
+
+    public void stopcollectionserviceonClick(){
+        PutDataMapRequest putDataMapReq = PutDataMapRequest.create("/wearable_stopcollectionservice").setUrgent();
+        putDataMapReq.getDataMap().putString("timestamp", Long.toString(System.currentTimeMillis()));
+        putDataMapReq.getDataMap().putString("StopCollectionService", Long.toString(System.currentTimeMillis()));
+        PutDataRequest putDataReq = putDataMapReq.asPutDataRequest();
+        Wearable.DataApi.putDataItem(googleApiClient, putDataReq);
+    }
+
+    // Connect to the data layer when the Activity starts
+    @Override
+    protected void onStart() {
+        super.onStart();
+        googleApiClient.connect();
+    }
+
+    @Override
+    protected void onStop() {
+        if (googleApiClient != null && googleApiClient.isConnected()) {
+            googleApiClient.disconnect();
+        }
+        super.onStop();
+    }
+
+    @Override
+    public void onConnected(Bundle bundle) {
+    }
+
+    @Override
+    public void onConnectionSuspended(int cause) {
+        new AlertDialog.Builder(this)
+                .setTitle("Connection Suspended!")
+                .setMessage("Connection to Wear Suspended")
+                .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.cancel();
+                    }
+                })
+                .show();
+    }
+
+    @Override
+    public void onConnectionFailed(ConnectionResult connectionResult) {
+        new AlertDialog.Builder(this)
+                .setTitle("Connection Failed!")
+                .setMessage("Connection to Wear Failed")
+                .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.cancel();
                     }
                 })
                 .show();

@@ -4,15 +4,27 @@ import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.os.Looper;
 import android.preference.PreferenceActivity;
 import android.preference.PreferenceManager;
 import android.view.View;
 import android.widget.Button;
 
-public class Preferences extends PreferenceActivity implements View.OnClickListener {
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.wearable.DataApi;
+import com.google.android.gms.wearable.PutDataMapRequest;
+import com.google.android.gms.wearable.PutDataRequest;
+import com.google.android.gms.wearable.Wearable;
+
+public class Preferences extends PreferenceActivity implements View.OnClickListener,
+        GoogleApiClient.ConnectionCallbacks,
+        GoogleApiClient.OnConnectionFailedListener {
 
         String CollectionMethod, txid, getAddress;
         Button sendpreferencesbutton;
+        private GoogleApiClient googleApiClient;
+
 
 
 
@@ -21,6 +33,12 @@ public class Preferences extends PreferenceActivity implements View.OnClickListe
         super.onCreate(savedInstanceState);
         addPreferencesFromResource(R.xml.preferences);
         setContentView(R.layout.preferences);
+
+        googleApiClient = new GoogleApiClient.Builder(this)
+                .addConnectionCallbacks(this)
+                .addOnConnectionFailedListener(this)
+                .addApi(Wearable.API)
+                .build();
 
         sendpreferencesbutton = (Button) findViewById(R.id.sendpreferencesbutton);
         sendpreferencesbutton.setOnClickListener(this);
@@ -37,15 +55,19 @@ public class Preferences extends PreferenceActivity implements View.OnClickListe
                 .setTitle("saved config:")
                 .setMessage(
                         "txid: " + txid + "\n"
-                                + "CollectionMethod: " + CollectionMethod + "\n"
                                 + "getAddress: " + getAddress + "\n"
-
+                                + "CollectionMethod: " + CollectionMethod + "\n"
                 )
                 .setPositiveButton("Send to Wear", new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int which) {
-                          new DataLayerActivity().SendPreferences();
-
-
+                        PutDataMapRequest putDataMapReq = PutDataMapRequest.create("/wearable_prefernces").setUrgent();
+                        putDataMapReq.getDataMap().putString("timestamp", Long.toString(System.currentTimeMillis()));
+                        putDataMapReq.getDataMap().putString("txid", txid);
+                        putDataMapReq.getDataMap().putString("getAddress", getAddress);
+                        putDataMapReq.getDataMap().putString("getName", "xbridge");
+                        putDataMapReq.getDataMap().putString("CollectionMethod", CollectionMethod);
+                        PutDataRequest putDataReq = putDataMapReq.asPutDataRequest();
+                        Wearable.DataApi.putDataItem(googleApiClient, putDataReq);
                     }
 
                 })
@@ -67,5 +89,51 @@ public class Preferences extends PreferenceActivity implements View.OnClickListe
                 sendconfigButtonclick();
                 break;
         }
+    }
+
+
+    // Connect to the data layer when the Activity starts
+    @Override
+    protected void onStart() {
+        super.onStart();
+        googleApiClient.connect();
+    }
+
+    @Override
+    protected void onStop() {
+        if (googleApiClient != null && googleApiClient.isConnected()) {
+            googleApiClient.disconnect();
+        }
+        super.onStop();
+    }
+
+    @Override
+    public void onConnected(Bundle bundle) {
+    }
+
+    @Override
+    public void onConnectionSuspended(int cause) {
+        new AlertDialog.Builder(this)
+                .setTitle("Connection Suspended!")
+                .setMessage("Connection to Wear Suspended")
+                .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.cancel();
+                    }
+                })
+                .show();
+    }
+
+    @Override
+    public void onConnectionFailed(ConnectionResult connectionResult) {
+        new AlertDialog.Builder(this)
+                .setTitle("Connection Failed!")
+                .setMessage("Connection to Wear Failed")
+                .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.cancel();
+                    }
+                })
+                .show();
     }
 }

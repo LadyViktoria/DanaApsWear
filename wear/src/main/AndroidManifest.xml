@@ -10,8 +10,6 @@
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="com.google.android.permission.PROVIDE_BACKGROUND" />
 
-
-
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
@@ -25,7 +23,6 @@
         <meta-data
             android:name="AA_DB_VERSION"
             android:value="1" />
-
         <provider
             android:name="com.activeandroid.content.ContentProvider"
             android:authorities="com.example"
@@ -33,39 +30,14 @@
         <uses-library
             android:name="com.google.android.wearable"
             android:required="false" />
-
-        <activity
-            android:name=".MainActivity"
-            android:label="@string/app_name"
-            android:theme="@android:style/Theme.DeviceDefault.Light">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
-
-        <service
-            android:name="com.eveningoutpost.dexdrip.Services.DexCollectionService"
-            android:enabled="true"
-            android:exported="true" >
-        </service>
-
         <receiver android:name="com.eveningoutpost.dexdrip.AutoStart" >
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
             </intent-filter>
         </receiver>
-
-        <service android:name=".ListenerService">
-            <intent-filter>
-                <action android:name="com.google.android.gms.wearable.BIND_LISTENER" />
-            </intent-filter>
-        </service>
-
         <service
-            android:name="danaapswear.danaapswear.MyWatchFace"
-            android:label="@string/my_digital_name"
+            android:name="danaapswear.danaapswear.SimpleWatchFaceService"
+            android:label="@string/app_name"
             android:permission="android.permission.BIND_WALLPAPER">
             <meta-data
                 android:name="android.service.wallpaper"
@@ -76,14 +48,13 @@
             <meta-data
                 android:name="com.google.android.wearable.watchface.preview_circular"
                 android:resource="@drawable/preview_digital_circular" />
-
+            <meta-data
+                android:name="com.google.android.wearable.watchface.companionConfigurationAction"
+                android:value="com.catinean.simpleandroidwatchface.CONFIG_DIGITAL" />
             <intent-filter>
                 <action android:name="android.service.wallpaper.WallpaperService" />
-
                 <category android:name="com.google.android.wearable.watchface.category.WATCH_FACE" />
             </intent-filter>
         </service>
-
-            </application>
-
-        </manifest>
+    </application>
+</manifest>
