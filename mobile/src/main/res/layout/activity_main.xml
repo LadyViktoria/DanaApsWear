@@ -77,7 +77,7 @@
         <Button
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Stop Collection\r\n Service"
+            android:text="Forget BT Device"
             android:id="@+id/stopcollectionservice"
             android:layout_column="1" />
     </TableRow>

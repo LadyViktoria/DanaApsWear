@@ -1,5 +1,6 @@
 package danaapswear.danaapswear;
 
+
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -13,7 +14,6 @@ import android.os.Handler;
 import android.os.Looper;
 import android.preference.PreferenceManager;
 import android.support.wearable.watchface.CanvasWatchFaceService;
-import android.support.wearable.watchface.WatchFaceService;
 import android.support.wearable.watchface.WatchFaceStyle;
 import android.util.Log;
 import android.view.SurfaceHolder;
@@ -22,7 +22,6 @@ import com.activeandroid.query.Select;
 import com.eveningoutpost.dexdrip.Models.ActiveBluetoothDevice;
 import com.eveningoutpost.dexdrip.Models.BgReading;
 import com.eveningoutpost.dexdrip.Models.Sensor;
-import com.eveningoutpost.dexdrip.Services.DexCollectionService;
 import com.eveningoutpost.dexdrip.UtilityModels.CollectionServiceStarter;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -184,7 +183,7 @@ public class SimpleWatchFaceService extends CanvasWatchFaceService {
         public void onConnected(Bundle bundle) {
             Log.d(TAG, "connected GoogleAPI");
             Wearable.DataApi.addListener(googleApiClient, onDataChangedListener);
-            Wearable.DataApi.getDataItems(googleApiClient).setResultCallback(onConnectedResultCallback);
+           // Wearable.DataApi.getDataItems(googleApiClient).setResultCallback(onConnectedResultCallback);
         }
 
         private final DataApi.DataListener onDataChangedListener = new DataApi.DataListener() {
@@ -194,6 +193,8 @@ public class SimpleWatchFaceService extends CanvasWatchFaceService {
                     if (event.getType() == DataEvent.TYPE_CHANGED) {
                         DataItem item = event.getDataItem();
                         processConfigurationFor(item);
+                    }
+                    else if (event.getType() == DataEvent.TYPE_DELETED) {
                     }
                 }
                 dataEvents.release();
@@ -264,8 +265,8 @@ public class SimpleWatchFaceService extends CanvasWatchFaceService {
             if ("/wearable_stopcollectionservice".equals(item.getUri().getPath())) {
                 DataMap dataMap = DataMapItem.fromDataItem(item).getDataMap();
                 if (dataMap.containsKey("StopCollectionService")) {
-                    Log.d("DexCollectionService", "DexCollectionService stopped");
-                    //mContext.stopService(new Intent(mContext, DexCollectionService.class));
+                    Log.d("ActiveBluetoothDevice ", "forget");
+                    ActiveBluetoothDevice.forget();
                 }
             }
 
