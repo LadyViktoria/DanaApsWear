@@ -1,11 +1,11 @@
 package danaapswear.danaapswear;
 
-import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Looper;
+import android.preference.PreferenceActivity;
 import android.preference.PreferenceManager;
 import android.util.Log;
 
@@ -17,7 +17,7 @@ import com.google.android.gms.wearable.PutDataMapRequest;
 import com.google.android.gms.wearable.PutDataRequest;
 import com.google.android.gms.wearable.Wearable;
 
-public class DataLayerActivity extends Activity implements GoogleApiClient.ConnectionCallbacks,
+public class DataLayerActivity extends PreferenceActivity implements GoogleApiClient.ConnectionCallbacks,
         GoogleApiClient.OnConnectionFailedListener  {
 
         GoogleApiClient googleClient;
@@ -26,23 +26,26 @@ public class DataLayerActivity extends Activity implements GoogleApiClient.Conne
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        // TODO Auto-generated method stub
         super.onCreate(savedInstanceState);
+        addPreferencesFromResource(R.xml.preferences);
         googleClient = new GoogleApiClient.Builder(this)
                 .addApi(Wearable.API)
                 .addConnectionCallbacks(this)
                 .addOnConnectionFailedListener(this)
                 .build();
-    }
-
-    public void SendPreferences() {
-        SharedPreferences SP = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
-
+        SharedPreferences SP = PreferenceManager.getDefaultSharedPreferences(this);
         CollectionMethod = SP.getString("CollectionMethod", "NA");
         txid = SP.getString("txid", "NA");
-        getAddress = SP.getString("getAdress", "NA");
+        getAddress = SP.getString("getAddress", "NA");
 
-        Log.d("NEW", "CollectionMethod" + CollectionMethod);
+    }
+
+
+    public void SendPreferences() {
+
+        Log.d("NEW", "CollectionMethod " + CollectionMethod);
+        Log.d("NEW", "txid " + txid);
+        Log.d("NEW", "getAddress " + getAddress);
     }
 
     // Connect to the data layer when the Activity starts
@@ -57,10 +60,10 @@ public class DataLayerActivity extends Activity implements GoogleApiClient.Conne
         //read shared prefernces and put them into strings
         // Create a DataMap object and send it to the data layer
         DataMap dataMap = new DataMap();
-        dataMap.putString("getAddress", getAddress);
-        dataMap.putString("txid", txid);
+        //dataMap.putString("getAddress", getAddress);
+        //dataMap.putString("txid", txid);
         dataMap.putString("getName", "xbridge");
-        dataMap.putString("collectionmethod", CollectionMethod);
+        //dataMap.putString("collectionmethod", CollectionMethod);
         //Requires a new thread to avoid blocking the UI
         new SendToDataLayerThread(WEARABLE_DATA_PATH, dataMap).start();
     }

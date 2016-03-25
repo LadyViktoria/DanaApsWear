@@ -1,6 +1,8 @@
 package danaapswear.danaapswear;
 
+import android.app.Notification;
 import android.content.Intent;
+import android.support.v4.app.NotificationCompat;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
@@ -23,6 +25,13 @@ public class ListenerService extends WearableListenerService {
 
         DataMap dataMap;
         for (DataEvent event : dataEvents) {
+            Notification notification = new NotificationCompat.Builder(getApplication())
+                    .setSmallIcon(R.drawable.close_button)
+                    .setContentTitle("Hello World")
+                    .setContentText("My first Android Wear notification")
+                    .extend(
+                            new NotificationCompat.WearableExtender().setHintShowBackgroundOnly(true))
+                    .build();
             Log.v("myTag", "DataMap received on watch: " + DataMapItem.fromDataItem(event.getDataItem()).getDataMap());
             // Check the data type
             if (event.getType() == DataEvent.TYPE_CHANGED) {

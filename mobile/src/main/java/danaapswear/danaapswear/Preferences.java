@@ -14,9 +14,10 @@ public class Preferences extends PreferenceActivity implements View.OnClickListe
         String CollectionMethod, txid, getAddress;
         Button sendpreferencesbutton;
 
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        // TODO Auto-generated method stub
         super.onCreate(savedInstanceState);
         addPreferencesFromResource(R.xml.preferences);
         setContentView(R.layout.preferences);
@@ -26,11 +27,11 @@ public class Preferences extends PreferenceActivity implements View.OnClickListe
     }
 
     private void sendconfigButtonclick() {
-        SharedPreferences SP = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
+        SharedPreferences SP = PreferenceManager.getDefaultSharedPreferences(this);
 
         CollectionMethod = SP.getString("CollectionMethod", "NA");
         txid = SP.getString("txid", "NA");
-        getAddress = SP.getString("getAdress", "NA");
+        getAddress = SP.getString("getAddress", "NA");
 
         new AlertDialog.Builder(this)
                 .setTitle("saved config:")
@@ -42,7 +43,9 @@ public class Preferences extends PreferenceActivity implements View.OnClickListe
                 )
                 .setPositiveButton("Send to Wear", new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int which) {
-                        new DataLayerActivity().SendPreferences();
+                          new DataLayerActivity().SendPreferences();
+
+
                     }
 
                 })
