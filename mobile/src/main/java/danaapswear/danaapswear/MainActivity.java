@@ -6,7 +6,6 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.text.InputType;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -15,24 +14,14 @@ import android.widget.Button;
 import android.widget.EditText;
 
 import com.fourmob.datetimepicker.date.DatePickerDialog;
-import com.google.android.gms.common.ConnectionResult;
-import com.google.android.gms.common.api.GoogleApiClient;
-import com.google.android.gms.wearable.DataApi;
-import com.google.android.gms.wearable.DataMap;
-import com.google.android.gms.wearable.PutDataMapRequest;
-import com.google.android.gms.wearable.PutDataRequest;
-import com.google.android.gms.wearable.Wearable;
 import com.sleepbot.datetimepicker.time.RadialPickerLayout;
 import com.sleepbot.datetimepicker.time.TimePickerDialog;
 
 import java.util.Calendar;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener,
-        GoogleApiClient.ConnectionCallbacks,
-        GoogleApiClient.OnConnectionFailedListener,
         DatePickerDialog.OnDateSetListener,
         TimePickerDialog.OnTimeSetListener{
-    GoogleApiClient googleClient;
     Button startsensor, stopsensor;
     EditText calibration, doublecalibration, intercept, slope;
     int year, month ,day ,hour ,minute;
@@ -62,13 +51,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         intercept = (EditText) findViewById(R.id.intercept);
         intercept.setInputType(InputType.TYPE_CLASS_NUMBER);
         intercept.setOnClickListener(this);
-
-        // Build a new GoogleApiClient for the the Wearable API
-        googleClient = new GoogleApiClient.Builder(this)
-                .addApi(Wearable.API)
-                .addConnectionCallbacks(this)
-                .addOnConnectionFailedListener(this)
-                .build();
     }
 
     @Override
@@ -135,7 +117,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         new DialogInterface.OnClickListener() {
                             public void onClick(DialogInterface dialog,int id) {
                                 calibration.setText(userInput.getText());
-                                googleClient.connect();
+                                //googleClient.connect();
                             }
                         })
                 .setNegativeButton("Cancel",
@@ -165,7 +147,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         new DialogInterface.OnClickListener() {
                             public void onClick(DialogInterface dialog,int id) {
                                 doublecalibration.setText(userInput.getText());
-                                googleClient.connect();
+                                //googleClient.connect();
                             }
                         })
                 .setNegativeButton("Cancel",
@@ -195,7 +177,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         new DialogInterface.OnClickListener() {
                             public void onClick(DialogInterface dialog,int id) {
                                 slope.setText(userInput.getText());
-                                googleClient.connect();
+                                //googleClient.connect();
                             }
                         })
                 .setNegativeButton("Cancel",
@@ -225,7 +207,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         new DialogInterface.OnClickListener() {
                             public void onClick(DialogInterface dialog,int id) {
                                 intercept.setText(userInput.getText());
-                                googleClient.connect();
+                                //googleClient.connect();
                             }
                         })
                 .setNegativeButton("Cancel",
@@ -272,12 +254,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 .setMessage("Sensor Started at: " + day + "." + month + "." + year + "  " + hour + ":" + minute)
                 .setPositiveButton("Send to Wear", new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int which) {
+                       /*
                         if (googleClient.isConnected()) {
                             Log.v("myTag", "send DataMap to data layer");
 
                         } else {
                             Log.v("myTag", "send DataMap to data layer Failed");
-                        }
+                        } */
                     }
 
                 })
@@ -286,80 +269,5 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     }
                 })
                 .show();
-    }
-
-    // Connect to the data layer when the Activity starts
-    @Override
-    protected void onStart() {
-        super.onStart();
-    }
-
-    @Override
-    public void onConnected(Bundle connectionHint) {
-        String WEARABLE_DATA_PATH = "/wearable_data";
-        //read shared prefernces and put them into strings
-        // Create a DataMap object and send it to the data layer
-        DataMap dataMap = new DataMap();
-        //Requires a new thread to avoid blocking the UI
-        new SendToDataLayerThread(WEARABLE_DATA_PATH, dataMap).start();
-    }
-
-    // Disconnect from the data layer when the Activity stops
-    @Override
-    protected void onStop() {
-        if (null != googleClient && googleClient.isConnected()) {
-            googleClient.disconnect();
-        }
-        super.onStop();
-    }
-
-    // Placeholders for required connection callbacks
-    @Override
-    public void onConnectionSuspended(int cause) {
-        new AlertDialog.Builder(this)
-                .setTitle("Connection Suspended!")
-                .setMessage("Connection to Wear Suspended")
-                .setPositiveButton("OK", new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int which) {
-                    }
-                })
-                .show();
-    }
-
-    @Override
-    public void onConnectionFailed(ConnectionResult connectionResult) {
-        new AlertDialog.Builder(this)
-                .setTitle("Connection Failed!")
-                .setMessage("Connection to Wear Failed")
-                .setPositiveButton("OK", new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int which) {
-                    }
-                })
-                .show();
-    }
-
-    class SendToDataLayerThread extends Thread {
-        String path;
-        DataMap dataMap;
-
-        // Constructor for sending data objects to the data layer
-        SendToDataLayerThread(String p, DataMap data) {
-            path = p;
-            dataMap = data;
-        }
-
-        public void run() {
-            // Construct a DataRequest and send over the data layer
-            PutDataMapRequest putDMR = PutDataMapRequest.create(path);
-            putDMR.getDataMap().putAll(dataMap);
-            PutDataRequest request = putDMR.asPutDataRequest();
-            DataApi.DataItemResult result = Wearable.DataApi.putDataItem(googleClient, request).await();
-            if (result.getStatus().isSuccess()) {
-                Log.v("myTag", "DataMap: " + dataMap + " sent successfully to data layer ");
-            } else {
-                // Log an error
-                Log.v("myTag", "ERROR: failed to send DataMap to data layer");
-            }
-        }
     }
 }

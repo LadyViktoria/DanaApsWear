@@ -5,6 +5,10 @@
     <string name="hello_world">Hello world!</string>
     <string name="action_settings">Settings</string>
     <string name="sensorstart">Sensor start</string>
+    <string name="google_app_id">danaapswear</string>
+
+
+
 
 
 </resources>
