@@ -1,6 +1,8 @@
 package danaapswear.danaapswear;
 
 
+import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -42,7 +44,6 @@ import java.util.Calendar;
 import java.util.concurrent.TimeUnit;
 
 public class SimpleWatchFaceService extends CanvasWatchFaceService {
-    int year, month, day, hour, minute;
     private static final long TICK_PERIOD_MILLIS = TimeUnit.SECONDS.toMillis(1);
 
     @Override
@@ -60,6 +61,7 @@ public class SimpleWatchFaceService extends CanvasWatchFaceService {
         private SimpleWatchFace watchFace;
         private Handler timeTick;
         private GoogleApiClient googleApiClient;
+
 
         @Override
         public void onCreate(SurfaceHolder holder) {
@@ -237,17 +239,11 @@ public class SimpleWatchFaceService extends CanvasWatchFaceService {
                     Log.d("Sensor", "sensor is active:" + Sensor.isActive());
                 } else {
                     Log.d("Sensor", "sensor is not active starting new Sensor:" + Sensor.isActive());
-                    final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
-                    prefs.edit().putInt("year", dataMap.getInt("year")).apply();
-                    prefs.edit().putInt("month", dataMap.getInt("month")).apply();
-                    prefs.edit().putInt("day", dataMap.getInt("day")).apply();
-                    prefs.edit().putInt("hour", dataMap.getInt("hour")).apply();
-                    prefs.edit().putInt("minute", dataMap.getInt("minute")).apply();
-                    year = prefs.getInt("year", 0);
-                    month = prefs.getInt("month", 0);
-                    day = prefs.getInt("day", 0);
-                    hour = prefs.getInt("hour", 0);
-                    minute = prefs.getInt("minute", 0);
+                    int year = dataMap.getInt("year");
+                    int month = dataMap.getInt("month");
+                    int day = dataMap.getInt("day");
+                    int hour = dataMap.getInt("hour");
+                    int minute = dataMap.getInt("minute");
                     Log.d("Sensor Date recieved: ", day + "." + month + "." + year + "  " + hour + ":" + minute);
                     //new calendar
                     Calendar calendar = Calendar.getInstance();
@@ -266,7 +262,23 @@ public class SimpleWatchFaceService extends CanvasWatchFaceService {
                 DataMap dataMap = DataMapItem.fromDataItem(item).getDataMap();
                 if (dataMap.containsKey("StopCollectionService")) {
                     Log.d("ActiveBluetoothDevice ", "forget");
+                    BluetoothManager mBluetoothManager;
+                    mBluetoothManager = (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
+                    final BluetoothAdapter bluetoothAdapter = mBluetoothManager.getAdapter();
                     ActiveBluetoothDevice.forget();
+                    bluetoothAdapter.disable();
+                    Handler mHandler = new Handler();
+                    final Handler mHandler2 = new Handler();
+                    mHandler.postDelayed(new Runnable() {
+                        public void run() {
+                            bluetoothAdapter.enable();
+                            mHandler2.postDelayed(new Runnable() {
+                                public void run() {
+                                    CollectionServiceStarter.restartCollectionService(getApplicationContext());
+                                }
+                            }, 5000);
+                        }
+                    }, 1000);
                 }
             }
 
