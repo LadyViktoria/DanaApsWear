@@ -314,9 +314,8 @@ public class SimpleWatchFaceService extends CanvasWatchFaceService {
             if ("/wearable_calibration".equals(item.getUri().getPath())) {
                 DataMap dataMap = DataMapItem.fromDataItem(item).getDataMap();
                 if (dataMap.containsKey("startcalibration")) {
-                    String calibrationvalue = dataMap.getString("calibration", "");
-                    double calValue = Double.parseDouble(calibrationvalue);
-                    Calibration calibration = Calibration.create(calValue, getApplicationContext());
+                    double calValue = Double.parseDouble(dataMap.getString("calibration", ""));
+                    Calibration.create(calValue, getApplicationContext());
                     Log.d("NEW CALIBRATION", "Calibration value: " + calValue);
                     callibrationCheckin();
                 }
@@ -325,13 +324,11 @@ public class SimpleWatchFaceService extends CanvasWatchFaceService {
             if ("/wearable_doublecalibration".equals(item.getUri().getPath())) {
                 DataMap dataMap = DataMapItem.fromDataItem(item).getDataMap();
                 if (dataMap.containsKey("startdoublecalibration")) {
-                    String doublecalibrationvalue1 = dataMap.getString("doublecalibration1", "");
-                    String doublecalibrationvalue2 = dataMap.getString("doublecalibration2", "");
-                    double calValue_1 = Double.parseDouble(doublecalibrationvalue1);
-                    double calValue_2 = Double.parseDouble(doublecalibrationvalue2);
-                    Calibration.initialCalibration(calValue_1, calValue_2, getApplicationContext());
-                    Log.d("NEW CALIBRATION", "Calibration value_1: " + calValue_1);
-                    Log.d("NEW CALIBRATION", "Calibration value_2: " + calValue_2);
+                    double calValue1 = Double.parseDouble(dataMap.getString("doublecalibration1", ""));
+                    double calValue2 = Double.parseDouble(dataMap.getString("doublecalibration2", ""));
+                    Calibration.initialCalibration(calValue1, calValue2, getApplicationContext());
+                    Log.d("NEW CALIBRATION", "Calibration value_1: " + calValue1);
+                    Log.d("NEW CALIBRATION", "Calibration value_2: " + calValue2);
                     callibrationCheckin();
                 }
             }
@@ -380,8 +377,14 @@ public class SimpleWatchFaceService extends CanvasWatchFaceService {
         }
 
         public void showBG() {
-            BgReading lastBgreading = BgReading.last();
-            Log.e(TAG, "tap event " + lastBgreading);
+            BgReading mBgReading;
+            mBgReading = BgReading.last();
+
+            if(mBgReading != null) {
+                Log.e(TAG, "tap event calculated value: " + mBgReading.calculated_value);
+            } else {
+                Log.e(TAG, "tap event mBgReading is null");
+            }
         }
     }
 }
