@@ -1,9 +1,12 @@
 package danaapswear.danaapswear;
 
+import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.Fragment;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
+import android.support.v4.app.FragmentActivity;
 import android.support.v7.app.AppCompatActivity;
 import android.text.InputType;
 import android.view.LayoutInflater;
@@ -24,7 +27,7 @@ import com.sleepbot.datetimepicker.time.TimePickerDialog;
 
 import java.util.Calendar;
 
-public class MainActivity extends AppCompatActivity implements View.OnClickListener,
+public class MainActivity extends FragmentActivity implements View.OnClickListener,
         GoogleApiClient.ConnectionCallbacks,
         GoogleApiClient.OnConnectionFailedListener,
         DatePickerDialog.OnDateSetListener,
@@ -130,6 +133,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     public void calibrationonClick(){
+
         // get prompts.xml view
         LayoutInflater li = LayoutInflater.from(this);
         View promptsView = li.inflate(R.layout.calibration_dialog, null);
@@ -144,7 +148,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         new DialogInterface.OnClickListener() {
                             public void onClick(DialogInterface dialog,int id) {
                                 calibration.setText(userInput.getText());
-                                //googleClient.connect();
+                                PutDataMapRequest putDataMapReq = PutDataMapRequest.create("/wearable_calibration").setUrgent();
+                                putDataMapReq.getDataMap().putString("timestamp", Long.toString(System.currentTimeMillis()));
+                                putDataMapReq.getDataMap().putString("startcalibration", Long.toString(System.currentTimeMillis()));
+                                putDataMapReq.getDataMap().putString("calibration", userInput.getText().toString());
+                                PutDataRequest putDataReq = putDataMapReq.asPutDataRequest();
+                                Wearable.DataApi.putDataItem(googleApiClient, putDataReq);
                             }
                         })
                 .setNegativeButton("Cancel",
@@ -160,21 +169,33 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     public void doublecalibrationonClick(){
+
         // get prompts.xml view
         LayoutInflater li = LayoutInflater.from(this);
         View promptsView = li.inflate(R.layout.doublecalibration_dialog, null);
         AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(this);
         // set prompts.xml to alertdialog builder
         alertDialogBuilder.setView(promptsView);
-        final EditText userInput = (EditText) promptsView.findViewById(R.id.editdoublecalibration);
+        final EditText userInput1 = (EditText) promptsView.findViewById(R.id.editdoublecalibration1);
+        final EditText userInput2 = (EditText) promptsView.findViewById(R.id.editdoublecalibration2);
+
         // set dialog message
         alertDialogBuilder
                 .setCancelable(false)
                 .setPositiveButton("Send to wear",
                         new DialogInterface.OnClickListener() {
                             public void onClick(DialogInterface dialog,int id) {
-                                doublecalibration.setText(userInput.getText());
-                                //googleClient.connect();
+                                String val1 = userInput1.getText().toString();
+                                String val2 = userInput2.getText().toString();
+                                String text = val1 + " " + val2;
+                                doublecalibration.setText(String.valueOf(text));
+                                PutDataMapRequest putDataMapReq = PutDataMapRequest.create("/wearable_doublecalibration").setUrgent();
+                                putDataMapReq.getDataMap().putString("timestamp", Long.toString(System.currentTimeMillis()));
+                                putDataMapReq.getDataMap().putString("startdoublecalibration", Long.toString(System.currentTimeMillis()));
+                                putDataMapReq.getDataMap().putString("doublecalibration1", userInput1.getText().toString());
+                                putDataMapReq.getDataMap().putString("doublecalibration2", userInput2.getText().toString());
+                                PutDataRequest putDataReq = putDataMapReq.asPutDataRequest();
+                                Wearable.DataApi.putDataItem(googleApiClient, putDataReq);
                             }
                         })
                 .setNegativeButton("Cancel",

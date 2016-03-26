@@ -21,8 +21,10 @@ import android.util.Log;
 import android.view.SurfaceHolder;
 
 import com.activeandroid.query.Select;
+import com.eveningoutpost.dexdrip.ImportedLibraries.dexcom.SyncingService;
 import com.eveningoutpost.dexdrip.Models.ActiveBluetoothDevice;
 import com.eveningoutpost.dexdrip.Models.BgReading;
+import com.eveningoutpost.dexdrip.Models.Calibration;
 import com.eveningoutpost.dexdrip.Models.Sensor;
 import com.eveningoutpost.dexdrip.UtilityModels.CollectionServiceStarter;
 import com.google.android.gms.common.ConnectionResult;
@@ -309,17 +311,38 @@ public class SimpleWatchFaceService extends CanvasWatchFaceService {
                 }
             }
 
-            if ("/simple_watch_face_config".equals(item.getUri().getPath())) {
+            if ("/wearable_calibration".equals(item.getUri().getPath())) {
                 DataMap dataMap = DataMapItem.fromDataItem(item).getDataMap();
-                if (dataMap.containsKey("KEY_BACKGROUND_COLOUR")) {
-                    String backgroundColour = dataMap.getString("KEY_BACKGROUND_COLOUR");
-                    watchFace.updateBackgroundColourTo(Color.parseColor(backgroundColour));
+                if (dataMap.containsKey("startcalibration")) {
+                    String calibrationvalue = dataMap.getString("calibration", "");
+                    double calValue = Double.parseDouble(calibrationvalue);
+                    Calibration calibration = Calibration.create(calValue, getApplicationContext());
+                    Log.d("NEW CALIBRATION", "Calibration value: " + calValue);
+                    callibrationCheckin();
                 }
+            }
 
-                if (dataMap.containsKey("KEY_DATE_TIME_COLOUR")) {
-                    String timeColour = dataMap.getString("KEY_DATE_TIME_COLOUR");
-                    watchFace.updateDateAndTimeColourTo(Color.parseColor(timeColour));
+            if ("/wearable_doublecalibration".equals(item.getUri().getPath())) {
+                DataMap dataMap = DataMapItem.fromDataItem(item).getDataMap();
+                if (dataMap.containsKey("startdoublecalibration")) {
+                    String doublecalibrationvalue1 = dataMap.getString("doublecalibration1", "");
+                    String doublecalibrationvalue2 = dataMap.getString("doublecalibration2", "");
+                    double calValue_1 = Double.parseDouble(doublecalibrationvalue1);
+                    double calValue_2 = Double.parseDouble(doublecalibrationvalue2);
+                    Calibration.initialCalibration(calValue_1, calValue_2, getApplicationContext());
+                    Log.d("NEW CALIBRATION", "Calibration value_1: " + calValue_1);
+                    Log.d("NEW CALIBRATION", "Calibration value_2: " + calValue_2);
+                    callibrationCheckin();
                 }
+            }
+        }
+
+        private void callibrationCheckin() {
+            if (Sensor.isActive()) {
+                SyncingService.startActionCalibrationCheckin(getApplicationContext());
+                Log.d("CALIBRATION", "Checked in all calibrations");
+            } else {
+                Log.d("CALIBRATION", "ERROR, sensor not active");
             }
         }
 
@@ -362,55 +385,3 @@ public class SimpleWatchFaceService extends CanvasWatchFaceService {
         }
     }
 }
-
-
-    /*
-    private void loadPrefs() {
-        SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(this);
-        //read shared prefs
-        calibration = sp.getString("calibration", "");
-        txid = sp.getString("dex_txid", "");
-        selectcollectionmethod = sp.getString("selectcollectionmethod", "");
-        getAddress = sp.getString("getAddress", "00:00:00:00:00:00");
-        getName = sp.getString("getName", "");
-        year = sp.getInt("year", 0);
-        month = sp.getInt("month", 0);
-        day = sp.getInt("day", 0);
-        hour = sp.getInt("hour", 0);
-        minute = sp.getInt("minute", 0);
-        stopsensor = sp.getBoolean("stopsensor", false);
-        calibrationcheckin = sp.getBoolean("calibrationcheckin", false);
-    }
-    */
-
-
-/*
-    public void addcalibration() {
-        loadPrefs();
-        if (calibrationcheckin == true) {
-            //double calValue = Double.parseDouble(calibration);
-            //Calibration calibration = Calibration.create(calValue, getApplicationContext());
-            //Log.d("NEW CALIBRATION", "Calibration value: " + calValue);
-            //callibrationCheckin();
-
-            double calValue_1 = Double.parseDouble(calibration);
-            double calValue_2 = Double.parseDouble(calibration);
-            Calibration.initialCalibration(calValue_1, calValue_2, getApplicationContext());
-
-            calibrationcheckin = false;
-        }
-    }
-*/
-
-/*
-    private void callibrationCheckin() {
-        if (Sensor.isActive()) {
-            SyncingService.startActionCalibrationCheckin(getApplicationContext());
-            Log.d("CALIBRATION", "Checked in all calibrations");
-            finish();
-        } else {
-            Log.d("CALIBRATION", "ERROR, sensor not active");
-        }
-    }
-    */
-

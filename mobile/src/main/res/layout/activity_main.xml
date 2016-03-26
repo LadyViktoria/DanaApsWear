@@ -37,6 +37,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_column="1"
+            style="?android:attr/borderlessButtonStyle"
             android:text="Start Sensor" />
 
         <Button
@@ -44,6 +45,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_column="2"
+            style="?android:attr/borderlessButtonStyle"
             android:text="Stop Sensor" />
     </TableRow>
 
@@ -66,7 +68,16 @@
             android:layout_height="wrap_content"
             android:text="Start Collection\r\n Service"
             android:id="@+id/startcollectionservice"
+            style="?android:attr/borderlessButtonStyle"
             android:layout_column="1" />
+
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Forget BT Device\r\n"
+            style="?android:attr/borderlessButtonStyle"
+            android:id="@+id/stopcollectionservice"
+            android:layout_column="2" />
 
     </TableRow>
 
@@ -74,12 +85,6 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
-        <Button
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Forget BT Device"
-            android:id="@+id/stopcollectionservice"
-            android:layout_column="1" />
     </TableRow>
 
     <TableRow
